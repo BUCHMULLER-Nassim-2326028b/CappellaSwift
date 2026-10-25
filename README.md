@@ -29,8 +29,21 @@ Un travail de recherche puis reproduction des fonctions, de l'interface et des r
 a été effectué. Ensuite viendront les améliorations : UI, fluidité, édition
 et nouveaux outils, gardant la compatibilité avec les projets DetX de l'original.
 
-La première version publique 1.0.0 est disponible ! Des fonctions manquent encore et certains
-comportements restent à comparer avec l'original (problème connu : il manque la feature de déplacement de plans).
+**La première version publique 1.0.0 est disponible !** 
+
+Des fonctions manquent encore et certains comportements restent à comparer avec l'original.
+*(problème connu : il manque la feature de déplacement de plans)*
+
+A terme, cette nouvelle version de Cappella n'aura pas simplement l'ambition d'être un simple
+portage moderne mais bien une continuation avec de nouvelles fonctionnalités et des améliorations
+QoL. 
+
+## Origine du projet
+
+L'idée de porter Cappella en Swift m'est venu de la nécessité d'un ami à utiliser le logiciel
+Cappella sur son MacBook Pro M5. La version publique de Cappella n'ayant pas été maintenue depuis
+près de 20 ans et les technologies de virtualisation (WineHQ, etc...) n'étant pas top sur Apple Silicon
+j'ai décidé de porter le logiciel sur Mac.
 
 ## Plateformes et téléchargements
 
@@ -143,6 +156,11 @@ Pour créer le Setup, installer Inno Setup 6 puis lancer :
 Les builds sont en release par défaut. Ajouter -Configuration debug pour le
 développement. Les prérequis complets sont dans [Windows](docs/WINDOWS.md),
 et la publication est décrite dans [Créer une release](docs/RELEASES.md).
+
+## Utilisation de l'IA
+
+L'assistance d'un modèle de langage IA (LLM) a été précieuse dans le portage de l'application.
+Des tests, unitaires comme fonctionnels, ont été effectués afin d'assurer un programme stable.
 
 ## Retours et contributions
 
