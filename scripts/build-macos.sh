@@ -10,7 +10,7 @@ if [[ -z "$version" ]]; then
   if [[ "${GITHUB_REF_TYPE:-}" == "tag" ]]; then
     version="${GITHUB_REF_NAME#v}"
   else
-    version="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' packaging/Info.plist)"
+    version="$(sed -nE 's/^[[:space:]]*public static let development = "([^"]+)".*/\1/p' Sources/CappellaCore/AppVersion.swift)"
   fi
 fi
 if [[ ! "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+([-+][A-Za-z0-9.-]+)?$ ]]; then
@@ -25,6 +25,10 @@ cp "$bin_path/CappellaMac" "$app_path/Contents/MacOS/CappellaMac"
 # Only the distributed copy loses debugger data; preserve the original build.
 xcrun strip -S "$app_path/Contents/MacOS/CappellaMac"
 cp packaging/Info.plist "$app_path/Contents/Info.plist"
+numeric_version="${version%%[-+]*}"
+/usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString $numeric_version" "$app_path/Contents/Info.plist"
+/usr/libexec/PlistBuddy -c "Set :CFBundleVersion $numeric_version" "$app_path/Contents/Info.plist"
+/usr/libexec/PlistBuddy -c "Set :CappellaVersion $version" "$app_path/Contents/Info.plist"
 mkdir -p "$app_path/Contents/Resources"
 cp packaging/Resources/Mire.jpg "$app_path/Contents/Resources/Mire.jpg"
 cp packaging/Resources/PreludeFLF*.ttf "$app_path/Contents/Resources/"

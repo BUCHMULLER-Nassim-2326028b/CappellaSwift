@@ -9,43 +9,40 @@
 <h1 align="center">Cappella</h1>
 
 <p align="center">
-  Une nouvelle vie pour la bande rythmo.<br>
-  Réécriture native en Swift pour macOS et Windows.
+  Réécriture en Swift pour macOS et Windows du logiciel de bande rythmo développé par Chinkel.
 </p>
 
 <p align="center">
   <a href="https://github.com/BUCHMULLER-Nassim-2326028b/CappellaMac/releases">Télécharger</a>
   · <a href="#roadmap">Roadmap</a>
-  · <a href="#ce-qui-reste-à-faire">Ce qui manque</a>
+  · <a href="#ce-qui-reste-à-faire">Ce qui reste à faire</a>
   · <a href="docs/RELEASES.md">Créer une release</a>
 </p>
 
 ## Le projet
 
-Cappella est un outil de travail pour le doublage : script, vidéo et dialogues
-synchronisés sur une bande rythmo. Ce projet en propose une réécriture native,
-réalisée sans les sources du logiciel d'origine.
+**Cappella a été développé à l'origine par Chinkel** pour le travail de doublage.
+Il permet d'écrire et de synchroniser les dialogues avec une vidéo sur une bande rythmo.
 
-**Retrouver d'abord les fonctions et les habitudes de Cappella, puis aller plus loin.**
-Le but final est de faire évoluer le logiciel : améliorer sa fluidité, son ergonomie
-et ses outils, tout en conservant les projets et les méthodes de travail existantes.
+Cette réécriture est réalisée par nvssgoat, sans le code source du logiciel original.
+Le travail consiste d'abord à retrouver ses fonctions, son interface et ses raccourcis
+sur les machines actuelles. Ensuite viendront les améliorations : fluidité, édition
+et nouveaux outils, en gardant la compatibilité avec les projets existants.
 
-Le projet est en développement. La fidélité complète à l'original et la compatibilité
-avec tous les projets doivent encore être validées en conditions réelles.
+La première version publique est la 1.0.0. Des fonctions manquent encore et certains
+comportements restent à comparer avec l'original.
 
 ## Plateformes et téléchargements
 
 | Plateforme | Architecture | Distribution |
 |---|---|---|
-| macOS | Apple Silicon · ARM64 | Portable : ZIP contenant Cappella.app |
-| Windows | Intel / AMD · x64 | Portable ZIP et Setup EXE |
-| Windows | ARM64 | Portable ZIP et Setup EXE ; build native configurée dans Actions, à valider |
+| macOS | Apple Silicon (ARM64) | ZIP contenant Cappella.app |
+| Windows | Intel / AMD (x64) | ZIP portable et installateur EXE |
+| Windows | ARM64 | ZIP portable et installateur EXE ; validation encore en cours |
 
-Les fichiers sont disponibles dans les [releases GitHub](https://github.com/BUCHMULLER-Nassim-2326028b/CappellaMac/releases)
-lorsqu'une version est publiée. Chaque distribution possède aussi son propre
-artefact dans GitHub Actions.
-
-Convention de nommage :
+Les versions publiées se trouvent dans les [releases GitHub](https://github.com/BUCHMULLER-Nassim-2326028b/CappellaMac/releases).
+Les builds de développement sont disponibles dans les artefacts de GitHub Actions.
+Les fichiers portent le même numéro de version que l'application :
 
 ~~~text
 Cappella-VERSION-macOS-arm64-Portable.zip
@@ -55,113 +52,106 @@ Cappella-VERSION-Windows-arm64-Portable.zip
 Cappella-VERSION-Windows-arm64-Setup.exe
 ~~~
 
-Sur Windows, le **Setup** installe l'application, propose les raccourcis et prépare
-le Windows App Runtime 1.7 de la bonne architecture si nécessaire. Le **portable**
-s'extrait dans un dossier ; il nécessite ce runtime installé séparément.
-Sur Mac, extraire le ZIP puis déplacer Cappella.app dans Applications.
+Sur Windows, le **Setup** installe Cappella et le Windows App Runtime 1.7 de la bonne
+architecture si nécessaire. Le **portable** s'extrait dans un dossier ; il nécessite
+ce runtime installé séparément. Sur Mac, extraire le ZIP et déplacer Cappella.app
+dans Applications.
 
-## Déjà en place
+## Fonctions disponibles
 
-- **Espace de travail familier** : script à gauche, vidéo à droite, timecode et
-  bande rythmo à quatre pistes, panneaux redimensionnables et thèmes clair/sombre.
-- **Édition sur la bande** : saisie au clic simple, rôles et portraits, signes,
-  menus contextuels, sélection des pistes et raccourcis.
-- **Navigation synchronisée** : repères, boucles, plans, zoom et barre de défilement horizontale.
-- **Vidéo et audio** : médias associés au projet, audio séparé et commutation VO/VI,
-  avec des différences de prise en charge entre les plateformes.
-- **Documents** : lecture/écriture DetX, format de travail .cappellaproject,
-  préférences persistantes et sauvegarde automatique désactivable.
-- **Sessions** : remplacement du projet courant avec demande d'enregistrement,
-  et possibilité de lancer plusieurs instances indépendantes.
-
-Ces fonctions sont implémentées ; leur présence ne garantit pas encore une parité
-complète avec chaque comportement de l'original.
+- Script synchronisé avec la rythmo et indication des répliques en cours.
+- Vidéo, timecode et bande à quatre pistes, avec panneaux redimensionnables et thèmes clair/sombre.
+- Édition des dialogues au clic simple, sélection du rôle, portraits et menus contextuels.
+- Signes de synchronisation, boucles, plans, zoom et défilement horizontal.
+- Lecture avant et arrière, jog, shuttle, audio séparé et commutation VO/VI.
+- Recherche dans les dialogues, avec filtre par rôle, casse et mots entiers.
+- Lecture et écriture DetX, format de travail .cappellaproject et sauvegarde automatique désactivable.
+- Préférences enregistrées, choix des polices système et mode vidéo pleine fenêtre.
+- Remplacement du projet courant avec demande d'enregistrement et ouverture de plusieurs instances.
 
 ## Ce qui reste à faire
 
-| Chantier | État actuel |
+| Sujet | Travail restant |
 |---|---|
-| Parité Mac / Windows | L'enregistrement microphone et la détection automatique des plans restent propres au Mac. La projection Windows est moins complète. |
-| Audio Windows | Étendre la couverture des dispositions multicanales et des formats AIFF/AIFC ; valider les codecs avec des médias réels. |
-| Compatibilité des projets | Vérifier davantage de variantes DetX, les anciens .det et la réouverture des exports dans le Cappella d'origine. |
-| Outils métier avancés | Compléter le protocole Orphée/FTDI, le sous-titrage UER et l'impression d'origine. |
-| Lecture inverse | Son inversé implémenté sur Mac et Windows ; première préparation temporaire nécessaire, codecs et synchronisation à valider sur médias réels. |
-| Validation en séance | Comparer typographie, saisie, synchronisation et fluidité sur différents écrans et projets longs. |
-| Distribution | Valider Windows ARM64 et le cycle installation/désinstallation ; préparer la signature Windows et la notarisation Mac. |
+| Parité Mac / Windows | Porter l'enregistrement microphone et la détection automatique des plans sur Windows, compléter la projection. |
+| Audio et vidéo | Vérifier les codecs et les dispositions multicanales sur davantage de médias. |
+| Anciens projets | Tester davantage de variantes DetX, les anciens .det et la réouverture des exports dans le logiciel original. |
+| Outils métier | Compléter Orphée/FTDI, le sous-titrage UER et l'impression. |
+| Lecture inverse | Vérifier la synchronisation avec différents codecs ; la première préparation du son demande encore du temps. |
+| Rendu et saisie | Comparer la typographie, la sélection et la fluidité sur des projets longs et différents écrans. |
+| Distribution | Terminer la validation Windows ARM64 et de l'installation, puis préparer la signature Windows et la notarisation Mac. |
 
-Les limites techniques sont détaillées dans [Architecture](docs/ARCHITECTURE.md)
-et [Windows](docs/WINDOWS.md).
+Les détails sont dans [Architecture](docs/ARCHITECTURE.md) et [Windows](docs/WINDOWS.md).
 
 ## Roadmap
 
-Une progression par étapes, sans dates promises. Certains chantiers avancent en parallèle.
-
 ~~~mermaid
 flowchart LR
-    A["1 · Socle natif<br/>En place<br/>Swift · moteur DetX · interfaces Mac et Windows"]
-    B["2 · Fidélité à Cappella<br/>En cours<br/>Bande rythmo · saisie · menus · audio"]
-    C["3 · Parité et stabilité<br/>À compléter<br/>Formats · outils métier · validation en séance"]
-    D["4 · Distribution fiable<br/>En cours<br/>ARM64 · portable et setup · signature"]
-    E["5 · Aller plus loin<br/>Objectif final<br/>Améliorer le logiciel et ses outils"]
+    A["1. Réécriture native<br/>Swift et moteur DetX<br/>Interfaces Mac et Windows"]
+    B["2. Portage des fonctions<br/>Bande rythmo, saisie<br/>Menus et audio"]
+    C["3. Parité et corrections<br/>Formats et outils métier<br/>Tests en séance"]
+    D["4. Distribution<br/>Installateurs et ARM64<br/>Signature et notarisation"]
+    E["5. Améliorations<br/>Faire évoluer Cappella<br/>À partir des retours d'utilisation"]
 
     A --> B --> C --> D --> E
 ~~~
 
-Une fois le socle fiable et les usages d'origine couverts, l'objectif est
-**d'améliorer Cappella lui-même** : une bande plus fluide, une édition plus agréable,
-des outils de recherche et de navigation plus puissants, et une meilleure
-interopérabilité. Les évolutions seront guidées par les retours des personnes qui
-utilisent le logiciel en séance.
+Le portage des fonctions et les corrections sont en cours. L'objectif final est
+aussi d'améliorer le logiciel, une fois les usages de l'original couverts.
 
 ## Compiler
 
-Les interfaces partagent le moteur CappellaCore. Le Mac utilise SwiftUI/AppKit ;
-Windows utilise WinUI 3 avec Swift-WinRT.
+Le moteur CappellaCore est partagé entre les deux versions. L'interface Mac utilise
+SwiftUI et AppKit ; l'interface Windows utilise WinUI 3 avec Swift-WinRT.
 
 ### macOS ARM64
 
-Sur un Mac Apple Silicon équipé des outils de développement Apple :
+Sur un Mac Apple Silicon avec les outils de développement Apple :
 
 ~~~bash
 bash scripts/build-macos.sh
 open dist/Cappella.app
 ~~~
 
-La cible minimale du package est macOS 13. Les workflows vérifient également
-l'ouverture sur macOS 15 et 26. La signature actuelle est ad hoc.
+La cible minimale est macOS 13. Les workflows vérifient l'ouverture sur macOS 15
+et 26. La signature actuelle est ad hoc.
 
 ### Windows x64 et ARM64
 
-Installer Swift pour Windows, les outils C++ de Visual Studio et un Windows SDK
-adaptés à l'architecture cible :
+Installer Swift pour Windows, les outils C++ de Visual Studio et le Windows SDK
+pour l'architecture cible :
 
 ~~~powershell
-.scriptsuild-windows.ps1 -Architecture x64
-.scriptsuild-windows.ps1 -SkipPrepare -Architecture x64
+.\scripts\build-windows.ps1 -Architecture x64
 ~~~
 
-La deuxième commande réutilise les projections WinRT si leur configuration
-n'a pas changé. Remplacer x64 par arm64 pour une chaîne de compilation ARM64.
-Le workflow Windows dispose de runners natifs pour les deux architectures.
-
-Pour générer le Setup à partir du binaire compilé, avec Inno Setup 6 installé :
+Pour les compilations suivantes, réutiliser les projections WinRT :
 
 ~~~powershell
-.scriptsuild-windows-installer.ps1 -Architecture x64
+.\scripts\build-windows.ps1 -SkipPrepare -Architecture x64
 ~~~
 
-Les builds sont en release par défaut ; ajouter -Configuration debug pour le
-développement. Les prérequis et les commandes complètes sont dans [Windows](docs/WINDOWS.md).
+Remplacer x64 par arm64 avec une chaîne de compilation ARM64. GitHub Actions
+utilise des runners natifs pour les deux architectures.
 
-## Participer
+Pour créer le Setup, installer Inno Setup 6 puis lancer :
 
-Les retours utiles incluent la plateforme, la version, les étapes pour reproduire
-le problème et le comportement attendu dans l'original. Pour un souci de compatibilité,
-un petit projet d'exemple sans médias confidentiels aide à comprendre le cas.
+~~~powershell
+.\scripts\build-windows-installer.ps1 -Architecture x64
+~~~
 
-- [Signaler un problème ou proposer une amélioration](https://github.com/BUCHMULLER-Nassim-2326028b/CappellaMac/issues)
+Les builds sont en release par défaut. Ajouter -Configuration debug pour le
+développement. Les prérequis complets sont dans [Windows](docs/WINDOWS.md),
+et la publication est décrite dans [Créer une release](docs/RELEASES.md).
+
+## Retours et contributions
+
+Pour signaler un bug, préciser la plateforme, la version et les étapes pour le
+reproduire. Un petit DetX d'exemple et une capture du comportement attendu dans
+l'original sont utiles. Éviter de joindre des médias confidentiels.
+
+- [Issues GitHub](https://github.com/BUCHMULLER-Nassim-2326028b/CappellaMac/issues)
 - [Architecture et limites](docs/ARCHITECTURE.md)
-- [Raccourcis et écarts avec l'original](docs/RACCOURCIS.md)
-- [Scripts et contrôles CI](docs/SCRIPTS.md)
-- [Préparer une release GitHub](docs/RELEASES.md)
-- [Références du logiciel d'origine](docs/reference/README.md)
+- [Raccourcis](docs/RACCOURCIS.md)
+- [Scripts et vérifications CI](docs/SCRIPTS.md)
+- [Références du logiciel original](docs/reference/README.md)

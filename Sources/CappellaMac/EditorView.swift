@@ -371,7 +371,7 @@ struct EditorView: View {
                 Text("Positions mémorisées").font(.headline)
                 List(project.positions ?? []) { marker in
                     HStack {
-                        Button("\(Timecode.format(marker.frame, fps: project.framesPerSecond)) — \(marker.label)") { seek(to: marker.frame); panel = nil }.buttonStyle(.plain)
+                        Button("\(Timecode.format(marker.frame, fps: project.framesPerSecond)) - \(marker.label)") { seek(to: marker.frame); panel = nil }.buttonStyle(.plain)
                         Spacer(); Button("Supprimer", role: .destructive) { project.positions?.removeAll { $0.id == marker.id } }
                     }
                 }

@@ -52,6 +52,7 @@ try {
         Remove-WindowsDistributionDebugInfo -Executable "$app/Cappella.exe" -SwiftExecutable $swiftExe
     }
     Copy-Item -Path "$repo/packaging/Resources/*" -Destination "$app/Resources"
+    [IO.File]::WriteAllText("$app/Resources/Version.txt", $Version, (New-Object Text.UTF8Encoding($false)))
     Copy-Item -LiteralPath "$repo/.windows/microsoft.windowsappsdk.1.7.250909003/runtimes/win-$Architecture/native/Microsoft.WindowsAppRuntime.Bootstrap.dll" -Destination $app
     # Swift DLLs must travel with the app; do not rely on the developer's PATH.
     $swiftRoot = [IO.Path]::GetFullPath((Join-Path (Split-Path $swiftExe -Parent) '../../../..'))
@@ -72,7 +73,7 @@ try {
         Get-ChildItem -LiteralPath "$repo/.windows/$package" -File | Where-Object Name -Match 'license|notice' | ForEach-Object { Copy-Item -LiteralPath $_.FullName -Destination "$app/Licenses/$package-$($_.Name)" }
     }
     & "$PSScriptRoot/build-windows-icons.ps1" -OutputDirectory "$app/Resources"
-    & "$PSScriptRoot/embed-windows-resources.ps1" -Executable "$app/Cappella.exe" -Icon "$app/Resources/AppIcon.ico" -Architecture $Architecture
+    & "$PSScriptRoot/embed-windows-resources.ps1" -Executable "$app/Cappella.exe" -Icon "$app/Resources/AppIcon.ico" -Architecture $Architecture -Version $Version
     # Remove helpers left by earlier builds before creating the distribution archive.
     foreach ($helper in @('Installer-runtime.ps1', 'LIRE-MOI.md')) {
         $helperPath = Join-Path $app $helper

@@ -256,9 +256,10 @@ extension WindowsEditor {
         let path = resources.appendingPathComponent(dark ? "CappellaLogo_dark.png" : "CappellaLogo.png")
         if FileManager.default.fileExists(atPath: path.path) { logo.source = BitmapImage(Uri(path.absoluteString)) }
         let title = label("Cappella", size: 26); title.fontWeight = FontWeights.semiBold
-        let version = dialogHint("Version 0.9b"), author = dialogHint("nvssgoat")
-        for text in [title, version, author] { text.textAlignment = .center; text.horizontalAlignment = .center }
-        let content = stack([logo, title, version, author], spacing: 12); content.width = 360
+        let version = dialogHint("Version \(AppVersion.current)"), author = dialogHint("Réécriture : nvssgoat")
+        let original = dialogHint("Logiciel d'origine développé par Chinkel.")
+        for text in [title, version, original, author] { text.textAlignment = .center; text.horizontalAlignment = .center }
+        let content = stack([logo, title, version, original, author], spacing: 12); content.width = 360
         _ = await dialog("À propos de Cappella", content: content, primary: "OK",
                          contentWidth: 360, defaultButton: .primary)
     }

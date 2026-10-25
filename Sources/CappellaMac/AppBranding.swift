@@ -1,5 +1,6 @@
 import SwiftUI
 import AppKit
+import CappellaCore
 
 @MainActor
 enum AppBranding {
@@ -43,7 +44,7 @@ enum AppBranding {
 private struct AboutView: View {
     @AppStorage("general.appearance") private var appearance = "light"
     private var name: String { Bundle.main.object(forInfoDictionaryKey: "CFBundleDisplayName") as? String ?? "Cappella" }
-    private var version: String { Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "0.9b" }
+    private var version: String { AppVersion.current }
     var body: some View {
         VStack(spacing: 14) {
             if let logo = AppBranding.logo(dark: appearance == "dark") {
@@ -52,9 +53,11 @@ private struct AboutView: View {
             }
             Text(name).font(.title.bold())
             Text("Version \(version)").foregroundStyle(.secondary)
-            Text("nvssgoat").font(.body)
+            Text("Logiciel d'origine développé par Chinkel.").font(.footnote)
+                .foregroundStyle(.secondary).multilineTextAlignment(.center)
+            Text("Réécriture : nvssgoat").font(.body)
         }
-        .padding(28).frame(width: 360, height: 350)
+        .padding(28).frame(width: 360, height: 380)
         .background(Color(nsColor: .windowBackgroundColor))
         .preferredColorScheme(appearance == "dark" ? .dark : .light)
     }

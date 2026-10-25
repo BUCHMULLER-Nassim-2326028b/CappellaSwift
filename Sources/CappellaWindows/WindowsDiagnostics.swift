@@ -18,10 +18,10 @@ extension WindowsEditor {
                     testFrame = self.document.frame
                     self.document.beginEditing(cue, at: cue.start)
                     updateTextEditor(focus: true)
-                    textEditor?.text = "Vérification é🙂 — saisie sur la bande."
+                    textEditor?.text = "Vérification é🙂 - saisie sur la bande."
                     return // TextChanged is delivered asynchronously by WinUI.
                 }
-                editingWorks = self.document.selectedCue?.text == "Vérification é🙂 — saisie sur la bande." && textEditor != nil && self.document.frame == testFrame
+                editingWorks = self.document.selectedCue?.text == "Vérification é🙂 - saisie sur la bande." && textEditor != nil && self.document.frame == testFrame
                 self.document.cancelEditing(); updateTextEditor()
             }
             try? timer.stop()

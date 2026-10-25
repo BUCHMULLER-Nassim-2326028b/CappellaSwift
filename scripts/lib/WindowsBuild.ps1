@@ -103,12 +103,13 @@ function Get-CappellaDistributionVersion {
         if ($env:GITHUB_REF_TYPE -eq 'tag' -and $env:GITHUB_REF_NAME -match '^v(.+)$') {
             $Version = $Matches[1]
         } else {
-            [xml]$info = [IO.File]::ReadAllText((Join-Path $RepositoryRoot 'packaging/Info.plist'))
-            $Version = $info.SelectSingleNode("//key[text()='CFBundleShortVersionString']").NextSibling.InnerText
+            $source = [IO.File]::ReadAllText((Join-Path $RepositoryRoot 'Sources/CappellaCore/AppVersion.swift'))
+            if ($source -notmatch 'public static let development = "([^"]+)"') { throw 'Version centrale introuvable dans AppVersion.swift.' }
+            $Version = $Matches[1]
         }
     }
     if ($Version -notmatch '^\d+\.\d+\.\d+(?:[-+][A-Za-z0-9.-]+)?$') {
-        throw 'Version invalide : utiliser par exemple 0.9.0 ou 0.9.0-beta.1.'
+        throw 'Version invalide : utiliser par exemple 1.0.1 ou 1.0.1-beta.1.'
     }
     return $Version
 }

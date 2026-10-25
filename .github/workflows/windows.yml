@@ -70,14 +70,14 @@ jobs:
         shell: pwsh
         run: ./scripts/build-windows-installer.ps1 -Architecture ${{ matrix.architecture }}
       - name: Upload portable
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
-          name: Cappella-Windows-${{ matrix.architecture }}-Portable
+          archive: false
           path: dist/Cappella-*-Windows-${{ matrix.architecture }}-Portable.zip
           if-no-files-found: error
       - name: Upload setup
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
-          name: Cappella-Windows-${{ matrix.architecture }}-Setup
+          archive: false
           path: dist/Cappella-*-Windows-${{ matrix.architecture }}-Setup.exe
           if-no-files-found: error

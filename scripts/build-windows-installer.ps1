@@ -11,6 +11,10 @@ $app = Join-Path $repo "dist/Cappella-Windows-$Architecture"
 if (!(Test-Path -LiteralPath "$app/Cappella.exe" -PathType Leaf)) {
     throw 'Compiler le programme avec scripts/build-windows.ps1 avant de créer le Setup.'
 }
+$stamp = Join-Path $app 'Resources/Version.txt'
+if (!(Test-Path -LiteralPath $stamp) -or [IO.File]::ReadAllText($stamp).Trim() -ne $Version) {
+    throw "La version du programme ne correspond pas au Setup $Version. Recompiler avec la même version."
+}
 if ((Get-WindowsPEArchitecture -Path "$app/Cappella.exe") -ne $Architecture) {
     throw "Le binaire à installer ne correspond pas à $Architecture."
 }

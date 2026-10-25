@@ -42,15 +42,15 @@ jobs:
         run: |
           xcrun swiftc -parse-as-library scripts/check_finder_open.swift -o /tmp/cappella-check-finder
           /tmp/cappella-check-finder "dist/Cappella.app" Tests/Fixtures/layout.detx
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: CappellaMac-previews-macos-15
           path: dist/previews/*.png
           if-no-files-found: ignore
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
-          name: Cappella-macOS-arm64-Portable
+          archive: false
           path: dist/Cappella-*-macOS-arm64-Portable.zip
           if-no-files-found: error
   launch-macos-26:
@@ -58,9 +58,11 @@ jobs:
     runs-on: macos-26
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
-          name: Cappella-macOS-arm64-Portable
+          pattern: Cappella-*-macOS-arm64-Portable.zip
+          merge-multiple: true
+          skip-decompress: true
           path: dist
       - name: Extract app built on macOS 15
         run: |
@@ -75,7 +77,7 @@ jobs:
         run: |
           xcrun swiftc -parse-as-library scripts/check_finder_open.swift -o /tmp/cappella-check-finder
           /tmp/cappella-check-finder "dist/Cappella.app" Tests/Fixtures/layout.detx
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: CappellaMac-previews-macos-26

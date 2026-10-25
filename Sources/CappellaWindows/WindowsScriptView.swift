@@ -33,7 +33,7 @@ extension WindowsEditor {
             for cue in cues {
                 guard let row = scriptRows[cue.id], rolesChanged || scriptModels[cue.id] != cue else { continue }
                 let name = cue.roleID.flatMap { names[$0] } ?? "Sans rôle"
-                let header = Timecode.format(cue.start, fps: fps) + " — " + name + " :"
+                let header = Timecode.format(cue.start, fps: fps) + " - " + name + " :"
                 if row.header.text != header { row.header.text = header }
                 if row.text.text != cue.text { row.text.text = cue.text }
             }

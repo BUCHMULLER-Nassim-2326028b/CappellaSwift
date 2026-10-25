@@ -10,13 +10,13 @@ sont des installateurs. macOS est distribué sous forme d'un ZIP contenant Cappe
 
 ## Les cinq téléchargements
 
-Pour le tag v0.9.0-beta.2, la release contient :
+Pour le tag v1.0.1, la release contient :
 
-- Cappella-0.9.0-beta.2-macOS-arm64-Portable.zip
-- Cappella-0.9.0-beta.2-Windows-x64-Portable.zip
-- Cappella-0.9.0-beta.2-Windows-x64-Setup.exe
-- Cappella-0.9.0-beta.2-Windows-arm64-Portable.zip
-- Cappella-0.9.0-beta.2-Windows-arm64-Setup.exe
+- Cappella-1.0.1-macOS-arm64-Portable.zip
+- Cappella-1.0.1-Windows-x64-Portable.zip
+- Cappella-1.0.1-Windows-x64-Setup.exe
+- Cappella-1.0.1-Windows-arm64-Portable.zip
+- Cappella-1.0.1-Windows-arm64-Setup.exe
 
 SHA256SUMS.txt contient les empreintes des cinq fichiers.
 
@@ -26,8 +26,8 @@ SHA256SUMS.txt contient les empreintes des cinq fichiers.
 2. Depuis le dépôt, créer et pousser un nouveau tag :
 
    ~~~powershell
-   git tag v0.9.0-beta.2
-   git push origin v0.9.0-beta.2
+   git tag v1.0.1
+   git push origin v1.0.1
    ~~~
 
    Choisir un numéro encore inutilisé. Le tag détermine la version des noms de
@@ -52,20 +52,36 @@ dans un artefact distinct :
 
 | Artefact Actions | Contenu |
 |---|---|
-| Cappella-macOS-arm64-Portable | Un ZIP macOS ARM64 |
-| Cappella-Windows-x64-Portable | Un ZIP Windows x64 |
-| Cappella-Windows-x64-Setup | Un Setup Windows x64 |
+| Cappella-1.0.1-macOS-arm64-Portable.zip | Application macOS ARM64 |
+| Cappella-1.0.1-Windows-x64-Portable.zip | Portable Windows x64 |
+| Cappella-1.0.1-Windows-x64-Setup.exe | Installateur Windows x64 |
 | Cappella-Windows-arm64-Portable | Un ZIP Windows ARM64 |
 | Cappella-Windows-arm64-Setup | Un Setup Windows ARM64 |
 
-GitHub enveloppe chaque artefact dans un ZIP lors du téléchargement depuis
-Actions. Le Setup et le portable ne sont jamais regroupés dans le même artefact.
-Sur la page Releases, les cinq fichiers sont directement accessibles séparément.
+Les distributions sont envoyées avec upload-artifact v7 et archive: false :
+le navigateur télécharge directement le ZIP portable ou le Setup EXE, sans ZIP
+supplémentaire. Le nom de l'artefact est celui du fichier, version comprise.
+Les récupérations entre jobs utilisent download-artifact v8 et skip-decompress:
+true pour conserver les distributions intactes. Les cinq fichiers restent séparés.
+Les anciens runs conservent leurs anciennes archives : relancer le workflow pour
+obtenir le nouveau format.
 
-Hors tag, la version des fichiers vient de packaging/Info.plist
-(CFBundleShortVersionString). En local, les scripts acceptent aussi une version
-explicite : -Version pour Windows, premier argument de build-macos.sh pour Mac.
-Cette convention de fichiers ne modifie pas les textes de version dans l'interface.
+## Version unique
+
+La première release publique est 1.0.0. Le développement suivant est 1.0.1.
+La seule valeur à modifier pour la prochaine version est `development` dans
+Sources/CappellaCore/AppVersion.swift. L'interface et les builds locaux utilisent
+cette valeur par défaut. Un tag v-prefixed ou une version explicite au script
+peut la remplacer pour une distribution ; la priorité est argument, tag, source.
+
+Le build inscrit la version résolue partout : À propos, vérification des mises à
+jour Mac, métadonnées du bundle, propriétés de l'EXE, manifeste Windows, Setup et
+noms des cinq fichiers. Les versions numériques Apple/Windows utilisent la partie
+X.Y.Z ; l'interface et les noms conservent un éventuel suffixe de préversion.
+Info.plist est un modèle rempli lors du packaging, pas une deuxième version à éditer.
+Le Setup vérifie que sa version correspond au programme déjà compilé.
+
+En local : -Version pour Windows, premier argument de build-macos.sh pour Mac.
 
 Les portables Windows nécessitent le Windows App Runtime de leur architecture.
 Chaque Setup inclut l'installateur Microsoft correspondant. La désinstallation

@@ -16,10 +16,11 @@ jobs:
       contents: write
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           pattern: Cappella-*-*-*
           merge-multiple: true
+          skip-decompress: true
           path: release
       - name: Create draft with all five distributions
         env:

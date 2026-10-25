@@ -61,8 +61,8 @@ extension WindowsEditor {
             ]),
             dialogSection("Écriture et détection", [
                 dialogField("Auteur", author),
-                dialogColumns([metadataField("Second auteur — prénom", "second-author.firstname"), metadataField("Second auteur — nom", "second-author.name")]),
-                dialogColumns([metadataField("Détecteur — prénom", "detector.firstname"), metadataField("Détecteur — nom", "detector.name")])
+                dialogColumns([metadataField("Second auteur - prénom", "second-author.firstname"), metadataField("Second auteur - nom", "second-author.name")]),
+                dialogColumns([metadataField("Détecteur - prénom", "detector.firstname"), metadataField("Détecteur - nom", "detector.name")])
             ]),
             dialogSection("Image", [dialogColumns([dialogField("Cadence", cadence), dialogField("Timestamp de l'image", stamp)])])
         ], spacing: 20)

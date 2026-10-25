@@ -156,7 +156,7 @@ fluidité et des commutations VO/VI nécessite des médias réels.
 
 Installer [Inno Setup 6](https://jrsoftware.org/isinfo.php), puis, après la compilation :
 
-    .\scripts\build-windows-installer.ps1 -Version 0.9.0-beta.1
+    .\scripts\build-windows-installer.ps1 -Version 1.0.1
 
 Cette commande réutilise dist/Cappella-Windows-ARCH sans recompiler Swift. Elle
 télécharge le runtime Microsoft dans .windows/installer lors de la première
@@ -212,8 +212,8 @@ Les fichiers suivent la convention décrite dans [RELEASES.md](RELEASES.md).
 
 Sur une machine équipée de Swift, des outils C++ et des runtimes de la cible :
 
-    .\scripts\build-windows.ps1 -SkipPrepare -Architecture arm64 -Version 0.9.0-beta.2
-    .\scripts\build-windows-installer.ps1 -Architecture arm64 -Version 0.9.0-beta.2
+    .\scripts\build-windows.ps1 -SkipPrepare -Architecture arm64 -Version 1.0.1
+    .\scripts\build-windows-installer.ps1 -Architecture arm64 -Version 1.0.1
 
 Remplacer arm64 par x64 pour Intel/AMD. Le script vérifie l'architecture PE du
 binaire et sélectionne les DLL Swift correspondantes. Le Setup ARM64 embarque

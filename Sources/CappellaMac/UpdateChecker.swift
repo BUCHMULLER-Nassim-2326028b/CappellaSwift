@@ -1,5 +1,6 @@
 import AppKit
 import Foundation
+import CappellaCore
 
 @MainActor
 final class UpdateChecker {
@@ -24,7 +25,7 @@ final class UpdateChecker {
                 struct Release: Decodable { let tag_name: String }
                 let release = try JSONDecoder().decode(Release.self, from: data)
                 let available = release.tag_name.hasPrefix("v") ? String(release.tag_name.dropFirst()) : release.tag_name
-                let current = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "0.2.1"
+                let current = AppVersion.current
                 if available.compare(current, options: .numeric) == .orderedDescending {
                     let alert = NSAlert(); alert.messageText = "Une mise à jour est disponible"
                     alert.informativeText = "Cappella \(release.tag_name) est disponible. Version actuelle : \(current)."
