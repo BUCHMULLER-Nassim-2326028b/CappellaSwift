@@ -16,6 +16,8 @@ struct WindowsBandState: Equatable {
 }
 
 struct WindowsRulerState: Equatable {
+    var origin: Int
+    var center: Int
     var width: Double
     var height: Double
     var scale: Double
@@ -26,7 +28,10 @@ struct WindowsRulerState: Equatable {
 
 extension WindowsEditor {
     var bandDisplayFrame: Double {
-        if let playbackFrame, Int(playbackFrame.rounded()) == self.document.frame { return playbackFrame }
+        // The document holds the current whole frame; motion keeps its fraction.
+        // Comparing a rounded value here quantizes half of every frame interval.
+        if let playbackFrame, playbackFrame >= Double(self.document.frame) - 1e-8,
+           playbackFrame < Double(self.document.frame + 1) + 1e-8 { return playbackFrame }
         return Double(self.document.frame)
     }
     func renderBand(reuse: Bool = false) {
@@ -41,6 +46,16 @@ extension WindowsEditor {
         let lane = height / 4, center = width / 2
         if invalid {
             bandState = state; bandCacheWidth = width; bandCacheHeight = height
+            // Index geometry once per edit/layout, never measure offscreen text
+            // or scan the whole project during steady playback.
+            bandIndexedCues = self.document.project.cues.filter { (0..<4).contains($0.track) }
+                .sorted { $0.start < $1.start }
+                .map { (cue: $0, end: timelineCueEndFrame($0)) }
+            bandPrefixEnds.removeAll(keepingCapacity: true)
+            var furthest = -Double.infinity
+            for entry in bandIndexedCues {
+                furthest = max(furthest, entry.end); bandPrefixEnds.append(furthest)
+            }
             bandOriginFrame = Int(position)
             band.children.clear(); bandCueViews.removeAll(); bandMarkerViews.removeAll()
             bandBackdrop.children.clear(); bandOverlay.children.clear()
@@ -68,7 +83,7 @@ extension WindowsEditor {
             bandOriginFrame = nextOrigin; bandMotion.invalidate()
         }
         let speed = timelineSpeed
-        bandMotion.update(band, offset: (Double(bandOriginFrame) - position) * scale,
+        bandMotion.update(bandMotionLayer, offset: (Double(bandOriginFrame) - position) * scale,
             speed: speed, fallback: bandTranslation)
         updateRuler(width: width, height: height, position: position)
         let now = ProcessInfo.processInfo.systemUptime
@@ -77,17 +92,28 @@ extension WindowsEditor {
         // Prefetch outside the viewport. Only entering/leaving cues change the tree;
         // nothing already visible is periodically destroyed and measured again.
         let from = position - width * 1.5 / scale, to = position + width * 1.5 / scale
-        let cues = self.document.project.cues.filter {
-            (0..<4).contains($0.track) && timelineCueEndFrame($0) >= from && Double($0.start) <= to
+        var low = 0, high = bandIndexedCues.count
+        while low < high {
+            let middle = low + (high - low) / 2
+            if bandPrefixEnds[middle] < from { low = middle + 1 } else { high = middle }
         }
+        let first = low
+        high = bandIndexedCues.count
+        while low < high {
+            let middle = low + (high - low) / 2
+            if Double(bandIndexedCues[middle].cue.start) <= to { low = middle + 1 } else { high = middle }
+        }
+        let entries = bandIndexedCues[first..<low].filter { $0.end >= from }
+        let cues = entries.map(\.cue)
         let cueIDs = Set(cues.map(\.id))
         for id in Array(bandCueViews.keys) where !cueIDs.contains(id) {
             if let view = bandCueViews.removeValue(forKey: id) { detachBandView(view) }
         }
-        for cue in cues where bandCueViews[cue.id] == nil {
+        for entry in entries where bandCueViews[entry.cue.id] == nil {
+            let cue = entry.cue
             let view = makeBandCue(cue, lane: lane)
             place(view, on: band, x: center + Double(cue.start - bandOriginFrame) * scale, y: 0,
-                width: max(1, (timelineCueEndFrame(cue) - Double(cue.start)) * scale), height: height)
+                width: max(1, (entry.end - Double(cue.start)) * scale), height: height)
             bandCueViews[cue.id] = view
         }
         var markerIDs = Set<Foundation.UUID>()
@@ -155,8 +181,23 @@ extension WindowsEditor {
             for sign in cue.visibleAnchors {
                 let x = Double(sign.frame - cue.start) * scale
                 let color = sign.kind.hasPrefix("in_") ? ink(0x00D800) : sign.kind.hasPrefix("out_") ? ink(0xED1515) : ink(dark ? 0xFFFFFF : 0x111111)
-                let mark = label(sign.kind.hasPrefix("in_") || sign.kind.hasPrefix("out_") ? "\u{2B06}" : "\u{2502}", size: 18, color: color)
-                place(mark, on: view, x: x - 6, y: y + lane - 22, width: 15, height: 22)
+                // Filled vector silhouettes; no font-dependent arrows or bars.
+                // One geometry per contour also keeps overlapping contours solid.
+                for contour in SyncSignGeometry.outlines(for: sign.kind) {
+                    guard let first = contour.first else { continue }
+                    let geometry = PathGeometry(), figure = PathFigure()
+                    figure.isFilled = true; figure.isClosed = true
+                    figure.startPoint = Point(x: Float(first.x * 0.72), y: Float(first.y * 0.72))
+                    for point in contour.dropFirst() {
+                        let segment = LineSegment()
+                        segment.point = Point(x: Float(point.x * 0.72), y: Float(point.y * 0.72))
+                        figure.segments.append(segment)
+                    }
+                    geometry.figures.append(figure)
+                    let mark = WinUI.Path(); mark.data = geometry; mark.fill = color
+                    mark.isHitTestVisible = false
+                    place(mark, on: view, x: x - 7.2, y: y + lane - 20, width: 14.4, height: 18)
+                }
                 if sign.id == self.document.signSelection {
                     let outline = Border(); outline.borderBrush = ink(0x328BFF)
                     outline.borderThickness = Thickness(left: 1, top: 1, right: 1, bottom: 1)
@@ -167,24 +208,25 @@ extension WindowsEditor {
         return view
     }
     func updateRuler(width: Double, height: Double, position: Double) {
-        // Tick marks repeat every second. Slide one persistent geometry modulo
-        // that period instead of rebuilding it when the dialogue cache recenters.
-        let period = Double(max(1, fps))
-        rulerMotion.update(bandRuler, offset: -position.truncatingRemainder(dividingBy: period) * scale,
-            speed: timelineSpeed, fallback: rulerTranslation)
-        let state = WindowsRulerState(width: width, height: height, scale: scale,
+        // Grid and phrases inherit one compositor translation. Geometry is
+        // expressed in the same frame coordinates, with no independent clock.
+        let span = max(max(1, fps), Int(width / scale))
+        let centerFrame = Int(floor(position / Double(span))) * span
+        let state = WindowsRulerState(origin: bandOriginFrame, center: centerFrame,
+            width: width, height: height, scale: scale,
             fps: fps, dark: dark, visible: self.document.preferences.showGrid)
         guard state != rulerState else { return }
         rulerState = state; bandRuler.children.clear()
         guard state.visible else { return }
-        let lane = height / 4, margin = 2 * period * scale + 8
-        let halfFrames = Int((width / 2 + margin) / scale) + 1
+        let lane = height / 4
+        let halfFrames = span * 2 + max(1, fps)
         let geometry = PathGeometry()
         // Use stable subdivisions so repeating the one-second pattern is seamless.
         let minimumStep = max(1, Int(4 / scale))
         let step = (1...max(1, fps)).first { $0 >= minimumStep && fps % $0 == 0 } ?? 1
-        for frame in stride(from: -halfFrames - halfFrames % step, through: halfFrames, by: step) {
-            let x = Float(width / 2 + Double(frame) * scale + margin)
+        let first = centerFrame - halfFrames
+        for frame in stride(from: first - first % step, through: centerFrame + halfFrames, by: step) {
+            let x = Float(width / 2 + Double(frame - bandOriginFrame) * scale)
             for track in 0..<4 {
                 let y = Float(Double(track) * lane)
                 let figure = PathFigure(); figure.isFilled = false
@@ -196,7 +238,7 @@ extension WindowsEditor {
         let ruler = WinUI.Path(); ruler.data = geometry
         ruler.stroke = ink(dark ? 0x999999 : 0x666666); ruler.strokeThickness = 0.5
         ruler.isHitTestVisible = false
-        place(ruler, on: bandRuler, x: -margin, y: 0, width: width + 2 * margin, height: height)
+        place(ruler, on: bandRuler, x: 0, y: 0, width: width, height: height)
     }
     var fontFamily: String {
         if self.document.preferences.fontName == ApplicationPreferences.defaultFontName {

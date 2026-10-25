@@ -12,7 +12,12 @@ public enum Timeline {
     /// seconds representation lies a fraction below that frame in binary.
     public static func frame(at seconds: Double, fps: Int, playing: Bool) -> Int {
         guard seconds.isFinite, fps > 0 else { return 0 }
-        return Int((max(0, seconds) * Double(fps)).rounded(playing ? .down : .toNearestOrAwayFromZero))
+        let value = max(0, seconds) * Double(fps)
+        let nearest = value.rounded()
+        // An exact frame represented in seconds can multiply back to n - 1 ULP.
+        // Snap numerical noise only; real sub-frame positions keep floor rounding.
+        if abs(value - nearest) <= max(1e-9, value.ulp * 4) { return Int(nearest) }
+        return Int(value.rounded(playing ? .down : .toNearestOrAwayFromZero))
     }
 
     public static func snapFrames(in project: Project) -> [Int] {

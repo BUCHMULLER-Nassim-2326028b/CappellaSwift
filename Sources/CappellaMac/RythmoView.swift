@@ -96,16 +96,16 @@ struct RythmoView: View {
                             guard x >= 0, x <= size.width else { continue }
                             let bottom = CGFloat(cue.track + 1) * laneHeight - 2
                             let color: Color = sign.kind.hasPrefix("in_") ? .green : sign.kind.hasPrefix("out_") ? .red : (appearance == "dark" ? .white : .black)
-                            var path = Path()
-                            if sign.kind.hasPrefix("in_") || sign.kind.hasPrefix("out_") {
-                                path.move(to: CGPoint(x: x, y: bottom - 14)); path.addLine(to: CGPoint(x: x - 5, y: bottom - 6))
-                                path.addLine(to: CGPoint(x: x + 5, y: bottom - 6)); path.closeSubpath()
+                            for contour in SyncSignGeometry.outlines(for: sign.kind) {
+                                var path = Path()
+                                for (index, point) in contour.enumerated() {
+                                    let position = CGPoint(x: x + CGFloat(point.x - 10) * 0.72,
+                                                           y: bottom - 18 + CGFloat(point.y) * 0.72)
+                                    if index == 0 { path.move(to: position) }
+                                    else { path.addLine(to: position) }
+                                }
+                                path.closeSubpath()
                                 context.fill(path, with: .color(color))
-                                context.fill(Path(CGRect(x: x - 1.5, y: bottom - 7, width: 3, height: 7)), with: .color(color))
-                            } else {
-                                path.move(to: CGPoint(x: x, y: bottom - 14)); path.addLine(to: CGPoint(x: x, y: bottom))
-                                context.stroke(path, with: .color(color), lineWidth: 2)
-                                context.draw(Text(sign.kind.uppercased()).font(.system(size: 7)).foregroundColor(appearance == "dark" ? .white : .black), at: CGPoint(x: x + 3, y: bottom - 9), anchor: .leading)
                             }
                             if sign.id == selectedSign {
                                 context.stroke(Path(CGRect(x: x - 7, y: bottom - 17, width: 14, height: 18)), with: .color(.blue), lineWidth: 1)

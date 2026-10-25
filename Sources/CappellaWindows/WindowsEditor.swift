@@ -33,6 +33,14 @@ final class WindowsEditor {
     var caretVisible = true
     var isResizing = false
     let script = StackPanel()
+    let scriptScroll = ScrollViewer()
+    var scriptCues: [Cue] = []
+    var scriptPlaybackState: DialogueScriptState?
+    var scriptActiveIDs = Set<UUID>()
+    var scriptFollowID: UUID?
+    var scriptPlaybackFrame: Int?
+    var scriptPlaybackRevision = UInt64.max
+    var scriptPlaybackDark: Bool?
     var scriptOrder: [UUID] = []
     var scriptRows: [UUID: (border: Border, header: TextBlock, text: TextBlock)] = [:]
     var scriptSelection: UUID?
@@ -49,15 +57,14 @@ final class WindowsEditor {
     var displayedVI: Bool?
     var renderingSubscription: EventCleanup?
     lazy var bandTextCursor = try? InputSystemCursor.create(.ibeam)
+    let bandMotionLayer = Canvas()
     let band = Canvas()
     let bandBackdrop = Canvas()
     let bandRuler = Canvas()
-    let rulerTranslation = CompositeTransform()
     var rulerState: WindowsRulerState?
     let bandOverlay = Canvas()
     let bandTranslation = CompositeTransform()
     let bandMotion = WindowsTimelineMotion()
-    let rulerMotion = WindowsTimelineMotion()
     var timelineClock = WindowsTimelineClock()
     var bandCueViews: [UUID: Canvas] = [:]
     var bandMarkerViews: [UUID: Canvas] = [:]
@@ -66,6 +73,8 @@ final class WindowsEditor {
     var bandCacheWidth = 0.0
     var bandCacheHeight = 0.0
     var bandState: WindowsBandState?
+    var bandIndexedCues: [(cue: Cue, end: Double)] = []
+    var bandPrefixEnds: [Double] = []
     var playbackFrame: Double?
     var lastAutosavePoll = Date.distantPast
     let timelineScrollbar = ScrollBar()
@@ -195,7 +204,13 @@ final class WindowsEditor {
             renderingSubscription = CompositionTarget.rendering.addHandler { [weak self] _, _ in self?.tick() }
         } else if media.rate == 0 {
             renderingSubscription?.dispose(); renderingSubscription = nil
-            refreshClock(); renderBand(reuse: true)
+            if media.hasMedia {
+                self.document.frame = self.document.project.mediaStartFrame +
+                    Timeline.frame(at: media.position, fps: fps, playing: true)
+            }
+            playbackFrame = nil; logicalFrame = Double(self.document.frame)
+            refreshClock()
+            refreshScriptPlayback(); renderBand(reuse: true)
         }
     }
     func tick() {
@@ -207,7 +222,7 @@ final class WindowsEditor {
                 let seconds = max(0, timelineClock.position(sample: media.position, rate: media.rate,
                     advancing: media.isAdvancing, now: uptime))
                 playbackFrame = Double(self.document.project.mediaStartFrame) + seconds * Double(fps)
-                self.document.frame = Int(playbackFrame!.rounded())
+                self.document.frame = self.document.project.mediaStartFrame + Timeline.frame(at: seconds, fps: fps, playing: true)
                 logicalFrame = playbackFrame
                 if media.rate < 0 {
                     media.synchronizeReverseVideo(Double(self.document.frame - self.document.project.mediaStartFrame) / Double(fps))
@@ -217,7 +232,8 @@ final class WindowsEditor {
                 let next = (logicalFrame ?? Double(self.document.frame)) + elapsed * Double(fps) * media.rate
                 logicalFrame = max(Double(self.document.project.mediaStartFrame), next)
                 playbackFrame = logicalFrame
-                self.document.frame = Int(logicalFrame!.rounded())
+                let seconds = (logicalFrame! - Double(self.document.project.mediaStartFrame)) / Double(fps)
+                self.document.frame = self.document.project.mediaStartFrame + Timeline.frame(at: seconds, fps: fps, playing: true)
                 if media.hasMedia {
                     let seconds = Double(self.document.frame - self.document.project.mediaStartFrame) / Double(fps)
                     if media.rate < 0 { media.synchronizeReverseVideo(seconds) }
@@ -225,7 +241,8 @@ final class WindowsEditor {
                 }
                 if media.rate < 0 && next <= Double(self.document.project.mediaStartFrame) { media.stop() }
             }
-            refreshClock(); renderBand(reuse: true)
+            if displayedFrame != self.document.frame || displayedFPS != fps { refreshClock() }
+            refreshScriptPlayback(); renderBand(reuse: true)
         } else { renderBand(reuse: true) }
     }
     func pollAutosave() {
@@ -238,12 +255,12 @@ final class WindowsEditor {
         }
     }
     func seek(_ frame: Int) {
-        timelineClock.reset(); bandMotion.invalidate(); rulerMotion.invalidate()
+        timelineClock.reset(); bandMotion.invalidate()
         playbackFrame = nil
         self.document.frame = max(self.document.project.mediaStartFrame, frame)
         logicalFrame = Double(self.document.frame)
         media.seek(Double(self.document.frame - self.document.project.mediaStartFrame) / Double(fps))
-        refreshClock(); renderBand()
+        refreshClock(); refreshScriptPlayback(); renderBand()
     }
     func showError(_ message: String) async { _ = await dialog("Cappella", content: label(message), primary: "OK") }
     func perform(_ operation: () throws -> Void) {

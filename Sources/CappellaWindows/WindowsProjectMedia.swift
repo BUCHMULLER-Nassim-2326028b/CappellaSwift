@@ -12,7 +12,7 @@ extension WindowsEditor {
         videoView.visibility = .collapsed
         previewImage?.visibility = .visible
         playbackFrame = nil; logicalFrame = nil; timelineClock.reset()
-        bandMotion.stop(); rulerMotion.stop()
+        bandMotion.stop()
     }
     func loadProjectMedia() throws {
         try? videoView.setMediaPlayer(nil)

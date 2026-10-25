@@ -136,3 +136,23 @@ dessiné. Le relâchement de la souris restaure uniquement son focus, sans rédu
 la sélection à un curseur. Le double-clic utilise le délai et la zone de tolérance
 Windows pour sélectionner le mot ; les limites de caractères composés sont
 conservées. Le clic simple continue d'ouvrir directement la saisie.
+
+En lecture Windows, le timecode garde l'image courante (arrondi inférieur commun
+au Mac) tandis que l'animation conserve la position fractionnaire. Seul le bruit
+numérique autour d'une frontière d'image exacte est arrondi à cette frontière.
+L'horloge interpole les positions MediaPlayer répétées sans les traiter comme de
+nouveaux échantillons ; les petits écarts frais corrigent progressivement la
+vitesse, avec un gain fondé sur le temps écoulé et indépendant du rafraîchissement.
+La mise en pause reprend la position arrêtée du transport, y compris en reverse.
+
+En lecture Windows, les bornes visuelles des phrases sont indexées lors des
+changements du document ou de la présentation. La population de la bande cherche
+les intersections par dichotomie dans les débuts triés et les fins maximales
+cumulées ; les phrases ouvertes ne sont plus remesurées périodiquement.
+Le suivi du script conserve son état entre les entrées et sorties de répliques,
+y compris en reverse. Seules les lignes dont la couleur change sont modifiées.
+Le timecode et la scrollbar suivent les images du projet ; le mouvement de la
+bande reste fractionnaire et animé indépendamment par Windows Composition.
+
+La conversion vers les ticks WinRT arrondit vers le haut pour ne pas retomber
+avant une borne à cause de la représentation flottante des secondes.

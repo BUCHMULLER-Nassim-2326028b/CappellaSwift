@@ -9,13 +9,15 @@ extension WindowsEditor {
     func refreshScript() {
         if scriptRevision != self.document.revision {
             let cues = self.document.project.cues.sorted { $0.start < $1.start }
+            scriptCues = cues; scriptPlaybackState = nil
             let order = cues.map(\.id)
             if order != scriptOrder {
-                script.children.clear(); scriptRows.removeAll(); scriptModels.removeAll(); scriptSelection = nil
+                script.children.clear(); scriptRows.removeAll(); scriptModels.removeAll(); scriptSelection = nil; scriptFollowID = nil
                 for cue in cues {
                     let header = label("", size: 11); header.fontFamily = FontFamily("Courier New")
                     let text = label("", size: 12); text.fontFamily = FontFamily("Courier New"); text.textWrapping = .wrap
                     let container = Border(); container.child = stack([header, text], spacing: 2)
+                    container.padding = Thickness(left: 6, top: 3, right: 6, bottom: 3)
                     let id = cue.id
                     container.tapped.addHandler { [weak self] _, _ in
                         guard let self, let current = self.document.project.cues.first(where: { $0.id == id }) else { return }
@@ -39,10 +41,43 @@ extension WindowsEditor {
             scriptRoles = self.document.project.roles; scriptFPS = fps
             scriptRevision = self.document.revision
         }
-        if scriptSelection != self.document.selection {
-            if let previous = scriptSelection { scriptRows[previous]?.border.background = nil }
-            if let current = self.document.selection { scriptRows[current]?.border.background = brush(0.2, 0.5, 1, alpha: 0.12) }
-            scriptSelection = self.document.selection
+        refreshScriptPlayback()
+    }
+    func refreshScriptPlayback() {
+        if scriptRevision != self.document.revision { refreshScript(); return }
+        let revision = self.document.revision, frame = self.document.frame
+        let restyle = scriptPlaybackRevision != revision || scriptPlaybackDark != dark
+        guard restyle || scriptPlaybackFrame != frame || scriptSelection != self.document.selection else { return }
+        if scriptPlaybackState?.contains(frame: frame) != true {
+            scriptPlaybackState = DialogueScriptState(cues: scriptCues, frame: frame)
+        }
+        guard let state = scriptPlaybackState else { return }
+        let affected = restyle ? Set(scriptRows.keys) : scriptActiveIDs.symmetricDifference(state.activeIDs)
+        // No brush allocation or XAML setters unless a row actually changes.
+        let normal = affected.isEmpty ? nil : ink(dark ? 0xE6E6E6 : 0x061424)
+        let active = affected.isEmpty ? nil : ink(dark ? 0xFF9999 : 0xBA2020)
+        for id in affected {
+            guard let row = scriptRows[id] else { continue }
+            let current = state.activeIDs.contains(id)
+            row.header.foreground = current ? active : normal
+            row.text.foreground = current ? active : normal
+        }
+        scriptActiveIDs = state.activeIDs; scriptSelection = self.document.selection
+        scriptPlaybackRevision = revision; scriptPlaybackFrame = frame; scriptPlaybackDark = dark
+        guard !self.document.editing, !dialogShowing, let id = state.followID,
+              id != scriptFollowID || restyle else { return }
+        scriptFollowID = id
+        DispatchQueue.main.async { [weak self] in
+            guard let self, !isClosed, !dialogShowing, !self.document.editing,
+                  scriptFollowID == id, let row = scriptRows[id] else { return }
+            // Scroll only when the target leaves the visible area.
+            if scriptScroll.viewportHeight > 0,
+               let transform = try? row.border.transformToVisual(scriptScroll),
+               let point = try? transform.transformPoint(WindowsFoundation.Point(x: 0, y: 0)),
+               point.y >= 0, Double(point.y) + row.border.actualHeight <= scriptScroll.viewportHeight { return }
+            let options = BringIntoViewOptions()
+            options.animationDesired = false; options.verticalAlignmentRatio = 0.3
+            try? row.border.startBringIntoView(options)
         }
     }
 }

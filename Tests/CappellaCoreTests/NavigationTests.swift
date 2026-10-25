@@ -38,6 +38,15 @@ final class NavigationTests: XCTestCase {
         }
     }
 
+    func testPlaybackDoesNotLoseAFrameAtFloatingPointBoundaries() {
+        for fps in [24, 25, 30, 48, 50, 60] {
+            for frame in [1, 29, 101, 900_001] {
+                let seconds = Double(frame) / Double(fps)
+                XCTAssertEqual(Timeline.frame(at: seconds, fps: fps, playing: true), frame)
+            }
+            XCTAssertEqual(Timeline.frame(at: 1 - 1e-6, fps: fps, playing: true), fps - 1)
+        }
+    }
     func testPlaybackKeepsFloorRoundingAndEmptyTimelineHasNoTarget() {
         XCTAssertEqual(Timeline.frame(at: 1.99, fps: 25, playing: true), 49)
         XCTAssertEqual(Timeline.frame(at: 1.99, fps: 25, playing: false), 50)

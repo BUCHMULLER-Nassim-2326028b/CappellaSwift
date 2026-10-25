@@ -66,18 +66,33 @@ struct WindowsTimelineClock {
     private var lastSample: Double?
     private var estimate = 0.0
     private var lastTime = 0.0
+    private var correction = 0.0
 
-    mutating func reset() { lastSample = nil }
+    mutating func reset() { lastSample = nil; correction = 0 }
 
     mutating func position(sample: Double, rate: Double, advancing: Bool, now: Double) -> Double {
         let elapsed = max(0, now - lastTime)
         defer { lastTime = now; lastSample = sample }
-        guard let previous = lastSample, advancing else { estimate = sample; return sample }
+        guard let previous = lastSample, advancing else {
+            estimate = sample; correction = 0; return sample
+        }
         let predicted = estimate + elapsed * rate
-        let error = sample - predicted
-        if abs(error) > 0.25 { estimate = sample }
-        else if sample != previous { estimate = predicted + error * min(1, elapsed * 4) }
-        else { estimate = predicted }
+        // An unchanged Position is an old measurement, not a request to jump
+        // backwards. Only a fresh media timestamp can correct our phase.
+        if sample != previous {
+            let error = sample - predicted
+            if abs(error) > max(0.25, abs(rate) * 0.25) {
+                estimate = sample; correction = 0; return sample
+            }
+            correction = error
+        }
+        // Correct phase through velocity, never by stepping the position.
+        // Time-based gain behaves the same at 60, 144 or 240 Hz; the slew limit
+        // prevents small corrections from reversing the direction of travel.
+        let limit = abs(rate) * elapsed * 0.1
+        let adjustment = min(limit, max(-limit, correction * (1 - exp(-elapsed / 0.25))))
+        estimate = predicted + adjustment
+        correction -= adjustment
         return estimate
     }
 }

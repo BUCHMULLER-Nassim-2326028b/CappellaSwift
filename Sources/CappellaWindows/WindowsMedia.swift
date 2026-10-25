@@ -49,6 +49,7 @@ final class WindowsMedia {
     }
     var duration: Double { Double(clock.playbackSession.naturalDuration.duration) / 10_000_000 }
     var position: Double {
+        if rate == 0 { return requestedPosition }
         if rate < 0 {
             guard !waitingForReverseAudio, let audio = reverseAudio, !reversePlayers.isEmpty else { return requestedPosition }
             let index = reverseClockIndex
@@ -70,6 +71,14 @@ final class WindowsMedia {
             DispatchQueue.main.async { self?.failed?(args?.errorMessage ?? "Lecture audio impossible.") }
         }
     }
+    /// WinRT positions use 100 ns ticks. Truncating a floating-point frame
+    /// boundary can seek just BEFORE that frame (41 / 25 -> 16_399_999 ticks).
+    /// Round toward the target's interior so the decoder receives that frame,
+    /// not its predecessor. The adjustment is less than one 100 ns tick.
+    private func seekPosition(_ seconds: Double) -> TimeSpan {
+        TimeSpan(duration: Int64((max(0, seconds) * 10_000_000).rounded(.up)))
+    }
+
     private func connectAudioEvents() {
         viAudio.mediaFailed.addHandler { [weak self] _, args in
             DispatchQueue.main.async { self?.failed?(args?.errorMessage ?? "Lecture VI impossible.") }
@@ -89,7 +98,7 @@ final class WindowsMedia {
                             current = Double(self.video.playbackSession.position.duration) / 10_000_000 - self.videoOffset
                         }
                     }
-                    player.playbackSession.position = TimeSpan(duration: Int64(max(0, current + offset) * 10_000_000))
+                    player.playbackSession.position = self.seekPosition(current + offset)
                     if self.rate > 0 {
                         player.playbackSession.playbackRate = self.rate
                         try? player.play()
@@ -151,7 +160,7 @@ final class WindowsMedia {
             let target = max(0, seconds + videoOffset)
             guard lastReverseVideoPosition != target else { return }
             lastReverseVideoPosition = target
-            video.playbackSession.position = TimeSpan(duration: Int64(target * 10_000_000))
+            video.playbackSession.position = seekPosition(target)
         }
     }
     func seek(_ seconds: Double) {
@@ -159,7 +168,7 @@ final class WindowsMedia {
         requestedPosition = max(0, seconds)
         lastReverseVideoPosition = nil
         synchronizeReverseVideo(requestedPosition)
-        let position = TimeSpan(duration: Int64(max(0, requestedPosition + audioOffset) * 10_000_000))
+        let position = seekPosition(requestedPosition + audioOffset)
         if usingExternalAudio && externalAudio.source != nil { externalAudio.playbackSession.position = position }
         if hasSeparateVI { viAudio.playbackSession.position = position }
         if rate < 0 { seekReverseAudio(); startReverseAudio() }
@@ -174,7 +183,7 @@ final class WindowsMedia {
             // Waiting for SeekCompleted here can stall a direction change.
             let current = Double(player.playbackSession.position.duration) / 10_000_000
             if abs(current - reversed) > 0.001 {
-                player.playbackSession.position = TimeSpan(duration: Int64(reversed * 10_000_000))
+                player.playbackSession.position = seekPosition(reversed)
             }
         }
     }

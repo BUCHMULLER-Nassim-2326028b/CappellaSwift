@@ -127,7 +127,7 @@ extension WindowsEditor {
         try? activeDialog?.hide(); activeDialog = nil
         try? timer.stop(); try? caretTimer.stop()
         renderingSubscription?.dispose(); renderingSubscription = nil
-        bandMotion.stop(); rulerMotion.stop()
+        bandMotion.stop()
         media.stop()
         try? projectionVideo?.setMediaPlayer(nil)
         try? projection?.close(); projection = nil; projectionVideo = nil

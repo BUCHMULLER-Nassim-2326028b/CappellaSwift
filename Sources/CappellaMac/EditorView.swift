@@ -140,6 +140,7 @@ struct EditorView: View {
 
     private var scriptPane: some View {
         ScrollViewReader { proxy in
+            let playback = DialogueScriptState(cues: orderedCues, frame: frame)
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 15) {
                     ForEach(orderedCues) { cue in
@@ -150,9 +151,10 @@ struct EditorView: View {
                             }
                             Text(cue.text).font(.custom("Courier New", size: 12)).frame(maxWidth: .infinity, alignment: .leading)
                         }
-                        .foregroundStyle(appearance == "dark" ? Color(white: 0.9) : Color(red: 0.02, green: 0.08, blue: 0.14))
+                        .foregroundStyle(playback.activeIDs.contains(cue.id)
+                            ? (appearance == "dark" ? Color(red: 1, green: 0.6, blue: 0.6) : Color(red: 0.73, green: 0.13, blue: 0.13))
+                            : (appearance == "dark" ? Color(white: 0.9) : Color(red: 0.02, green: 0.08, blue: 0.14)))
                         .padding(.vertical, 2).padding(.horizontal, 8)
-                        .background(selection == cue.id ? Color.blue.opacity(0.08) : Color.clear)
                         .contentShape(Rectangle()).id(cue.id)
                         .onTapGesture(count: 2) { select(cue, edit: true) }
                         .onTapGesture { select(cue, edit: false) }
@@ -166,11 +168,14 @@ struct EditorView: View {
             }
             .background(appearance == "dark" ? Color(white: 0.13) : Color(red: 0.965, green: 0.968, blue: 0.977))
             .onChange(of: selection) { id in if let id { proxy.scrollTo(id, anchor: .center) } }
-            .onChange(of: frame) { value in
-                ProjectSession.shared.currentFrame = value
-                guard transport.rate != 0, !editingPhrase,
-                      let cue = orderedCues.last(where: { $0.start <= value }), cue.id != lastScrolledCue else { return }
-                lastScrolledCue = cue.id; proxy.scrollTo(cue.id, anchor: .center)
+            .onChange(of: frame) { ProjectSession.shared.currentFrame = $0 }
+            .onChange(of: playback.followID) { id in
+                guard !editingPhrase, let id, id != lastScrolledCue else { return }
+                lastScrolledCue = id; proxy.scrollTo(id, anchor: .center)
+            }
+            .onAppear {
+                guard let id = playback.followID else { return }
+                lastScrolledCue = id; proxy.scrollTo(id, anchor: .center)
             }
         }
     }

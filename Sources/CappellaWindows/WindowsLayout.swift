@@ -54,7 +54,7 @@ extension WindowsEditor {
             let maximum = max(76, left.actualHeight - 100)
             if clockRow.actualHeight > maximum { clockRow.height = GridLength(value: maximum, gridUnitType: .pixel) }
         }
-        let scroll = ScrollViewer(); scroll.content = script
+        let scroll = scriptScroll; scroll.content = script
         script.spacing = 15; script.padding = Thickness(left: 8, top: 16, right: 8, bottom: 16)
         left.children.append(scroll)
         let clock = makeClockPanel()
@@ -71,13 +71,14 @@ extension WindowsEditor {
         videoPanel.children.append(videoView)
         try? Grid.setColumn(videoPanel, 2); main.children.append(videoPanel)
         try? Grid.setRow(main, 1); root.children.append(main)
-        band.renderTransform = bandTranslation
+        bandMotionLayer.renderTransform = bandTranslation
         band.useLayoutRounding = false
-        bandRuler.renderTransform = rulerTranslation
         bandRuler.isHitTestVisible = false
         bandContainer.children.append(bandBackdrop)
-        bandContainer.children.append(bandRuler)
-        bandContainer.children.append(band)
+        bandMotionLayer.useLayoutRounding = false
+        bandMotionLayer.children.append(bandRuler)
+        bandMotionLayer.children.append(band)
+        bandContainer.children.append(bandMotionLayer)
         bandOverlay.isHitTestVisible = false
         bandContainer.children.append(bandOverlay)
         bandContainer.children.append(editorLayer)
