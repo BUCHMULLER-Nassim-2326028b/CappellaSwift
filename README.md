@@ -42,8 +42,11 @@ QoL.
 
 L'idée de porter Cappella en Swift m'est venu de la nécessité d'un ami à utiliser le logiciel
 Cappella sur son MacBook Pro M5. La version publique de Cappella n'ayant pas été maintenue depuis
-près de 20 ans et les technologies de virtualisation (WineHQ, etc...) n'étant pas top sur Apple Silicon
-j'ai décidé de porter le logiciel sur Mac.
+près de 20 ans et les technologies de virtualisation (WineHQ, etc...) n'étant pas top sur Apple Silicon,
+j'ai alors décidé de porter le logiciel sur Mac.
+
+La version Windows est également écrite en Swift. Le projet ayant commencé comme un simple portage Mac,
+ce backport Windows a été réfléchi et effectué secondairement.
 
 ## Plateformes et téléchargements
 
