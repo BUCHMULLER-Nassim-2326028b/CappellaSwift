@@ -11,6 +11,8 @@ final class WindowsEditor {
     let document = WindowsDocument()
     let media = WindowsMedia()
     let root = Grid()
+    var videoOnly = false
+    var applyVideoOnlyLayout: ((Bool) -> Void)?
     let windowChrome = Grid()
     let customTitleBar = Grid()
     let titleText = label("Cappella", size: 12)
@@ -108,6 +110,10 @@ final class WindowsEditor {
     var activeDialog: ContentDialog?
     var lastRenderUptime = ProcessInfo.processInfo.systemUptime
     let editorMeasurement = TextBlock()
+    var timelineMeasurementFont = ""
+    var timelineMeasurementSize = 0.0
+    var timelineMeasurementSentinel = 0.0
+    var timelineMeasuredWidths: [String: Double] = [:]
     var textSelectionAnchor: (UUID, Int, Double)?
     var dragSign: (UUID, UUID, Int, Double)?
     var dragMoved = false
@@ -241,7 +247,7 @@ final class WindowsEditor {
                 }
                 if media.rate < 0 && next <= Double(self.document.project.mediaStartFrame) { media.stop() }
             }
-            if displayedFrame != self.document.frame || displayedFPS != fps { refreshClock() }
+            if !videoOnly && (displayedFrame != self.document.frame || displayedFPS != fps) { refreshClock() }
             refreshScriptPlayback(); renderBand(reuse: true)
         } else { renderBand(reuse: true) }
     }

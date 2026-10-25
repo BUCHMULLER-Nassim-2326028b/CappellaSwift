@@ -7,6 +7,12 @@ struct PreferencesPanel: View {
     @Environment(\.dismiss) private var dismiss
     @State private var draft = ApplicationPreferences.load()
     @State private var error: String?
+    @State private var systemFontFamilies = NSFontManager.shared.availableFontFamilies
+    private var fontFamilies: [String] {
+        let bundled = TimelineFont.defaultFontName
+        let others = Set(systemFontFamilies + [draft.fontName]).filter { !$0.isEmpty && $0 != bundled }
+        return [bundled] + others.sorted { $0.localizedStandardCompare($1) == .orderedAscending }
+    }
     @ObservedObject private var session = ProjectSession.shared
 
     var body: some View {
@@ -41,7 +47,7 @@ struct PreferencesPanel: View {
                     Toggle("Fermer automatiquement les réacs", isOn: $draft.closeReactions)
                     Divider()
                     Picker("Police", selection: $draft.fontName) {
-                        ForEach(["PreludeFLF", "Apple Chancery", "Snell Roundhand", "Times New Roman", "Arial", "Courier New"], id: \.self) { Text($0).tag($0) }
+                        ForEach(fontFamilies, id: \.self) { Text($0).tag($0) }
                     }
                     HStack { Text("Taille"); Slider(value: $draft.fontSize, in: 16...42); Text("\(Int(draft.fontSize))") }
                     HStack { Text("Vitesse de défilement"); Slider(value: $draft.pixelsPerSecond, in: 15...800) }

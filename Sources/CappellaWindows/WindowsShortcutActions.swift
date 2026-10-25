@@ -6,8 +6,12 @@ import WinSDK
 
 extension WindowsEditor {
     func toggleFullScreen() {
-        let kind: AppWindowPresenterKind = window.appWindow.presenter.kind == .fullScreen ? .default : .fullScreen
-        try? window.appWindow.setPresenter(kind)
+        if isResizing { endResize() }
+        self.document.finishEditing(); updateTextEditor()
+        videoOnly.toggle()
+        if videoOnly { bandMotion.stop() }
+        applyVideoOnlyLayout?(videoOnly)
+        refresh()
     }
     func changeVolume(_ delta: Double) {
         media.volume = min(1, max(0, media.volume + delta)); media.applyAudio(); refreshClock()

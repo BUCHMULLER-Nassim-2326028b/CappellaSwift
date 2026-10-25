@@ -25,6 +25,7 @@ struct EditorCommandState: Equatable {
     var hasSign = false
     var showGrid = true
     var showDetection = true
+    var videoOnly = false
     var recording = false
     var usingVI = false
     var detectionMode = false
@@ -41,6 +42,7 @@ final class EditorActions: ObservableObject {
     var hasSelection: Bool { state.hasSelection }
     var hasSign: Bool { state.hasSign }
     var showGrid: Bool { state.showGrid }
+    var videoOnly: Bool { state.videoOnly }
     var showDetection: Bool { state.showDetection }
     var recording: Bool { state.recording }
     var usingVI: Bool { state.usingVI }
@@ -150,7 +152,7 @@ struct CappellaCommands: Commands {
         CommandMenu("Affichage") {
             Toggle("Détection", isOn: Binding(get: { editor?.showDetection ?? true }, set: { _ in run(.detection) })).keyboardShortcut(cappellaFunctionKey(9), modifiers: [.control, .option])
             Toggle("Grille et signes", isOn: Binding(get: { editor?.showGrid ?? true }, set: { _ in run(.grid) })).keyboardShortcut(cappellaFunctionKey(10), modifiers: [.control, .option])
-            Button("Plein écran") { run(.fullScreen) }.keyboardShortcut(.return, modifiers: [.option])
+            Toggle("Plein écran", isOn: Binding(get: { editor?.videoOnly ?? false }, set: { _ in run(.fullScreen) })).keyboardShortcut(.return, modifiers: [.option])
             Divider()
             Button("Zoom avant") { run(.zoom(1.25)) }.keyboardShortcut("+", modifiers: [])
             Button("Zoom arrière") { run(.zoom(0.8)) }.keyboardShortcut("-", modifiers: [])

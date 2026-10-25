@@ -44,6 +44,7 @@ extension WindowsEditor {
         refreshScriptPlayback()
     }
     func refreshScriptPlayback() {
+        guard !videoOnly else { return }
         if scriptRevision != self.document.revision { refreshScript(); return }
         let revision = self.document.revision, frame = self.document.frame
         let restyle = scriptPlaybackRevision != revision || scriptPlaybackDark != dark
@@ -68,7 +69,7 @@ extension WindowsEditor {
               id != scriptFollowID || restyle else { return }
         scriptFollowID = id
         DispatchQueue.main.async { [weak self] in
-            guard let self, !isClosed, !dialogShowing, !self.document.editing,
+            guard let self, !isClosed, !videoOnly, !dialogShowing, !self.document.editing,
                   scriptFollowID == id, let row = scriptRows[id] else { return }
             // Scroll only when the target leaves the visible area.
             if scriptScroll.viewportHeight > 0,

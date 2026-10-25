@@ -148,6 +148,7 @@ struct DialogueTextEditor: NSViewRepresentable {
 
 enum TimelineFont {
     static let defaultFontName = "PreludeFLF"
+    private static var resolvedFaces: [String: String] = [:]
     static func register() {
         let packaged = Bundle.main.resourceURL
         let development = URL(fileURLWithPath: FileManager.default.currentDirectoryPath).appendingPathComponent("packaging/Resources")
@@ -159,7 +160,17 @@ enum TimelineFont {
         }
     }
     static func faceName(_ name: String) -> String {
-        name == defaultFontName ? "PreludeFLF-Italic" : name
+        if name == defaultFontName { return "PreludeFLF-Italic" }
+        if let cached = resolvedFaces[name] { return cached }
+        // Pick an actual face for a system family; keep explicit face names
+        // from older preferences working as well. Match the Windows italic band.
+        let manager = NSFontManager.shared
+        let face = manager.font(withFamily: name, traits: .italicFontMask, weight: 5, size: 12)
+            ?? manager.font(withFamily: name, traits: [], weight: 5, size: 12)
+            ?? NSFont(name: name, size: 12)
+        let resolved = face?.fontName ?? name
+        resolvedFaces[name] = resolved
+        return resolved
     }
     static func font(name: String, size: Double) -> NSFont {
         NSFont(name: faceName(name), size: CGFloat(size)) ?? .systemFont(ofSize: CGFloat(size))

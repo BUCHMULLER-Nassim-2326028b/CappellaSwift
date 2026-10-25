@@ -61,6 +61,16 @@ struct RythmoView: View {
                     }
                     context.stroke(lines, with: .color((appearance == "dark" ? Color.white : Color.black).opacity(0.55)), lineWidth: 0.5)
                 }
+                if showDetection {
+                    // Paint shot bars before phrases so role labels remain legible.
+                    for shot in project.shots {
+                        let x = cursor + CGFloat(shot.frame - frame) * scale
+                        guard x >= -4, x <= size.width + 4 else { continue }
+                        context.fill(Path(CGRect(x: x - 3, y: 0, width: 6, height: size.height)), with: .color(Color(white: 0.34)))
+                        context.fill(Path(CGRect(x: x - 3, y: 0, width: 1, height: size.height)), with: .color(.black.opacity(0.8)))
+                        context.fill(Path(CGRect(x: x + 2, y: 0, width: 1, height: size.height)), with: .color(.white.opacity(0.65)))
+                    }
+                }
                 for cue in project.cues where (0..<4).contains(cue.track) {
                     let begin = cursor + CGFloat(cue.start - frame) * scale
                     let end = cursor + (visibleEndFrame(cue) - CGFloat(frame)) * scale
@@ -114,15 +124,6 @@ struct RythmoView: View {
                     }
                 }
                 if showDetection {
-                    // Solid plan bars remain legible on both selected and
-                    // unselected lanes, as on the original band.
-                    for shot in project.shots {
-                        let x = cursor + CGFloat(shot.frame - frame) * scale
-                        guard x >= -4, x <= size.width + 4 else { continue }
-                        context.fill(Path(CGRect(x: x - 3, y: 0, width: 6, height: size.height)), with: .color(Color(white: 0.34)))
-                        context.fill(Path(CGRect(x: x - 3, y: 0, width: 1, height: size.height)), with: .color(.black.opacity(0.8)))
-                        context.fill(Path(CGRect(x: x + 2, y: 0, width: 1, height: size.height)), with: .color(.white.opacity(0.65)))
-                    }
                     let blue = Color(red: 0, green: 0.36, blue: 0.78)
                     for loop in project.loops {
                         let x = cursor + CGFloat(loop.frame - frame) * scale

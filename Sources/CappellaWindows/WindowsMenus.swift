@@ -132,7 +132,7 @@ extension WindowsEditor {
         menu("Affichage", [
             checkedMenuItem("Détection", shortcut: "Ctrl+Alt+F9", checked: { [unowned self] in self.document.preferences.showDetection }) { [unowned self] in self.document.preferences.showDetection.toggle(); savePreferences(); refresh() },
             checkedMenuItem("Grille et signes", shortcut: "Ctrl+Alt+F10", checked: { [unowned self] in self.document.preferences.showGrid }) { [unowned self] in self.document.preferences.showGrid.toggle(); savePreferences(); refresh() },
-            menuItem("Plein écran", shortcut: "Alt+Entrée") { [unowned self] in toggleFullScreen() },
+            checkedMenuItem("Plein écran", shortcut: "Alt+Entrée", checked: { [unowned self] in videoOnly }) { [unowned self] in toggleFullScreen() },
             menuItem("Zoom avant", shortcut: "+") { [unowned self] in zoom(1.25) },
             menuItem("Zoom arrière", shortcut: "−") { [unowned self] in zoom(0.8) },
             menuItem("Écran de contrôle") { [unowned self] in showProjection() }
@@ -248,6 +248,10 @@ extension WindowsEditor {
     }
     func handleShortcut(key: Int, ctrl: Bool, alt: Bool, shift: Bool, isRepeat: Bool) -> Bool {
         guard !dialogShowing, !isClosed else { return false }
+        if key == 27 && videoOnly && !ctrl && !alt {
+            if !isRepeat { toggleFullScreen() }
+            return true
+        }
         if ctrl && !alt && !shift {
             if key == 86, hasPhraseClipboard {
                 if !isRepeat { Task { await pastePhrase() } }
@@ -332,7 +336,7 @@ extension WindowsEditor {
             case 40: if !isRepeat { setRate(media.rate == -1 ? 0 : -1) }
             case 37: if alt { media.stop(); seek(self.document.frame - 1) } else { navigate("sign", -1) }
             case 39: if alt { media.stop(); seek(self.document.frame + 1) } else { navigate("sign", 1) }
-            case 13 where alt: toggleFullScreen()
+            case 13 where alt: if !isRepeat { toggleFullScreen() }
             case 13: Task { await toggleEditing() }
             case 27: self.document.cancelEditing(); updateTextEditor()
             case 112: openWeb("https://cappella.app/")

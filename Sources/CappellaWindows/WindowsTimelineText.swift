@@ -21,12 +21,30 @@ extension WindowsEditor {
         return text[..<index].utf16.count
     }
     func measureTimelineText(_ text: String) -> Double {
-        editorMeasurement.text = text
-        editorMeasurement.fontFamily = FontFamily(fontFamily)
-        editorMeasurement.fontStyle = .italic
-        editorMeasurement.fontSize = self.document.preferences.fontSize
+        guard !text.isEmpty else { return 0 }
+        let family = fontFamily, size = self.document.preferences.fontSize
+        // A visible sentinel makes trailing spaces interior to the measured
+        // run. The zero-width separator prevents kerning with the sentinel.
+        // Subtract its advance; never add anything to the displayed/model text.
+        let sentinel = "\u{200B}|"
+        if timelineMeasurementFont != family || timelineMeasurementSize != size {
+            timelineMeasurementFont = family; timelineMeasurementSize = size
+            timelineMeasuredWidths.removeAll(keepingCapacity: true)
+            editorMeasurement.fontFamily = FontFamily(family)
+            editorMeasurement.fontStyle = .italic
+            editorMeasurement.fontSize = size
+            editorMeasurement.useLayoutRounding = false
+            editorMeasurement.text = sentinel
+            try? editorMeasurement.measure(uiSize(width: 100_000, height: 1000))
+            timelineMeasurementSentinel = Double(editorMeasurement.desiredSize.width)
+        }
+        if let width = timelineMeasuredWidths[text] { return width }
+        editorMeasurement.text = text + sentinel
         try? editorMeasurement.measure(uiSize(width: 100_000, height: 1000))
-        return Double(editorMeasurement.desiredSize.width)
+        let width = max(0, Double(editorMeasurement.desiredSize.width) - timelineMeasurementSentinel)
+        if timelineMeasuredWidths.count >= 512 { timelineMeasuredWidths.removeAll(keepingCapacity: true) }
+        timelineMeasuredWidths[text] = width
+        return width
     }
     func timelineCueEndFrame(_ cue: Cue) -> Double {
         let editing = self.document.editing && self.document.selection == cue.id

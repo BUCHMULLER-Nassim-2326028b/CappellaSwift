@@ -38,6 +38,7 @@ struct EditorView: View {
     @State private var caret = 0
     @State private var timelineWheelScroll = TimelineWheelScroll()
     @State private var detectionMode = false
+    @State private var videoOnly = false
     @State private var panel: EditorPanel?
     @State private var search = DialogueSearch()
     @State private var searchMessage = ""
@@ -61,7 +62,7 @@ struct EditorView: View {
     private var orderedCues: [Cue] { project.cues.sorted { $0.start == $1.start ? $0.track < $1.track : $0.start < $1.start } }
     private var commandState: EditorCommandState {
         EditorCommandState(currentTrack: currentTrack, hasSelection: selection != nil, hasSign: selectedSign != nil,
-                           showGrid: showGrid, showDetection: showDetection,
+                           showGrid: showGrid, showDetection: showDetection, videoOnly: videoOnly,
                            recording: recorder.recording, usingVI: transport.usingVI,
                            detectionMode: detectionMode, playbackRate: Double(transport.rate),
                            canUndo: ProjectSession.shared.canUndo, canRedo: ProjectSession.shared.canRedo)
@@ -69,48 +70,56 @@ struct EditorView: View {
 
     var body: some View {
         GeometryReader { geometry in
-            VStack(spacing: 0) {
-                HSplitView {
-                    VStack(spacing: 0) {
-                        scriptPane
-                        cartouche
-                    }
-                    .frame(minWidth: 310, idealWidth: geometry.size.width * 0.445, maxWidth: .infinity, maxHeight: .infinity)
-                    videoPane.frame(minWidth: 350, maxWidth: .infinity, maxHeight: .infinity)
-                }
-                TimelineScroller(project: project, frame: frame, mediaDuration: transport.duration,
-                                 viewportWidth: geometry.size.width, pixelsPerSecond: pixelsPerSecond,
-                                 dark: appearance == "dark", onSeek: { target in
-                    if editingPhrase { finishPhrase() }
-                    transport.setRate(0)
-                    seek(to: target)
-                })
-                .frame(height: NSScroller.scrollerWidth(for: .small, scrollerStyle: .legacy))
-                RythmoView(project: project, frame: frame, pixelsPerSecond: pixelsPerSecond, fontName: fontName, fontSize: fontSize,
-                           showGrid: showGrid, showDetection: showDetection, selectedSign: selectedSign, selectedTrack: currentTrack,
-                           editingCue: editingPhrase ? selection : nil,
-                           scrollBy: { steps in
-                               if editingPhrase { finishPhrase() }
-                               transport.setRate(0)
-                               let range = TimelineScrollRange(startFrame: project.mediaStartFrame,
-                                   endFrame: TimelineScrollRange.contentEnd(in: project),
-                                   framesPerSecond: project.framesPerSecond, mediaDuration: transport.duration,
-                                   viewportWidth: geometry.size.width, pixelsPerSecond: pixelsPerSecond)
-                               if let target = timelineWheelScroll.target(currentFrame: frame, stepDelta: steps, range: range) {
-                                   seek(to: target)
-                               }
-                           },
-                           selectTrack: { track in
-                               if editingPhrase { finishPhrase() }
-                               currentTrack = track; selectedSign = nil; selection = nil
-                           }, moveSign: moveSign, editCue: editTimelineCue, contextMenu: phraseContextMenu)
-                    .overlay(alignment: .topLeading) {
-                        if editingPhrase, let cue = selectedCue {
-                            timelineEditor(cue)
+            ZStack {
+                VStack(spacing: 0) {
+                    HSplitView {
+                        VStack(spacing: 0) {
+                            scriptPane
+                            cartouche
                         }
+                        .frame(minWidth: 310, idealWidth: geometry.size.width * 0.445, maxWidth: .infinity, maxHeight: .infinity)
+                        Group {
+                            if videoOnly { Color.clear } else { videoPane }
+                        }.frame(minWidth: 350, maxWidth: .infinity, maxHeight: .infinity)
                     }
-                    .frame(height: rythmoHeight)
-                    .clipped()
+                    TimelineScroller(project: project, frame: frame, mediaDuration: transport.duration,
+                                     viewportWidth: geometry.size.width, pixelsPerSecond: pixelsPerSecond,
+                                     dark: appearance == "dark", onSeek: { target in
+                        if editingPhrase { finishPhrase() }
+                        transport.setRate(0)
+                        seek(to: target)
+                    })
+                    .frame(height: NSScroller.scrollerWidth(for: .small, scrollerStyle: .legacy))
+                    RythmoView(project: project, frame: frame, pixelsPerSecond: pixelsPerSecond, fontName: fontName, fontSize: fontSize,
+                               showGrid: showGrid, showDetection: showDetection, selectedSign: selectedSign, selectedTrack: currentTrack,
+                               editingCue: editingPhrase ? selection : nil,
+                               scrollBy: { steps in
+                                   if editingPhrase { finishPhrase() }
+                                   transport.setRate(0)
+                                   let range = TimelineScrollRange(startFrame: project.mediaStartFrame,
+                                       endFrame: TimelineScrollRange.contentEnd(in: project),
+                                       framesPerSecond: project.framesPerSecond, mediaDuration: transport.duration,
+                                       viewportWidth: geometry.size.width, pixelsPerSecond: pixelsPerSecond)
+                                   if let target = timelineWheelScroll.target(currentFrame: frame, stepDelta: steps, range: range) {
+                                       seek(to: target)
+                                   }
+                               },
+                               selectTrack: { track in
+                                   if editingPhrase { finishPhrase() }
+                                   currentTrack = track; selectedSign = nil; selection = nil
+                               }, moveSign: moveSign, editCue: editTimelineCue, contextMenu: phraseContextMenu)
+                        .overlay(alignment: .topLeading) {
+                            if editingPhrase, let cue = selectedCue {
+                                timelineEditor(cue)
+                            }
+                        }
+                        .frame(height: rythmoHeight)
+                        .clipped()
+                }
+                .opacity(videoOnly ? 0 : 1)
+                .allowsHitTesting(!videoOnly)
+                .accessibilityHidden(videoOnly)
+                if videoOnly { videoPane.frame(maxWidth: .infinity, maxHeight: .infinity) }
             }
         }
         .background(appearance == "dark" ? Color(white: 0.13) : Color(white: 0.965))
@@ -455,7 +464,8 @@ struct EditorView: View {
             catch { self.error = error.localizedDescription }
         case .relativeTrack(let delta): perform(.track(currentTrack + delta))
         case .findNext: findNext()
-        case .cancelPhrase: cancelPhrase()
+        case .cancelPhrase:
+            if videoOnly { videoOnly = false } else { cancelPhrase() }
         case .reaction(let text):
             if closeReactions {
                 pendingText = text; pendingEdit = false; addPhrase(kind: "in_open")
@@ -503,7 +513,10 @@ struct EditorView: View {
         case .zoom(let factor): pixelsPerSecond = min(800, max(15, pixelsPerSecond * factor))
         case .grid: showGrid.toggle()
         case .detection: showDetection.toggle()
-        case .fullScreen: NSApplication.shared.keyWindow?.toggleFullScreen(nil)
+        case .fullScreen:
+            if editingPhrase { finishPhrase() }
+            videoOnly.toggle()
+            NSApplication.shared.keyWindow?.makeFirstResponder(nil)
         case .projection: projection.show(project: $project, transport: transport, pixelsPerSecond: pixelsPerSecond, fontName: fontName, fontSize: fontSize)
         case .toggleVI: transport.toggleVI()
         case .mute: transport.toggleMute()

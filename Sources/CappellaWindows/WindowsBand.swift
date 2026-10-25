@@ -35,7 +35,7 @@ extension WindowsEditor {
         return Double(self.document.frame)
     }
     func renderBand(reuse: Bool = false) {
-        guard !isClosed else { return }
+        guard !isClosed, !videoOnly else { return }
         let width = bandContainer.actualWidth, height = bandContainer.actualHeight
         guard width > 0, height > 0 else { return }
         let position = bandDisplayFrame
@@ -131,7 +131,8 @@ extension WindowsEditor {
                         badge.child = label(marker.label, size: 13, color: ink(0xFFFFFF))
                         place(badge, on: view, x: -8, y: height - 21, width: 22, height: 21)
                     }
-                    try? Canvas.setZIndex(view, 1)
+                    // Shot bars stay behind role labels and phrase content.
+                    try? Canvas.setZIndex(view, isLoop ? 1 : -1)
                     place(view, on: band, x: center + Double(marker.frame - bandOriginFrame) * scale, y: 0,
                         width: 1, height: height)
                     bandMarkerViews[marker.id] = view
@@ -167,9 +168,12 @@ extension WindowsEditor {
                 guard textWidth > 0 else { continue }
                 let text = label(segment.text, size: self.document.preferences.fontSize, color: color)
                 text.fontFamily = font; text.fontStyle = .italic
+                text.useLayoutRounding = false
                 text.textDecorations = cue.voice == "off" ? .underline : .none
                 try? text.measure(uiSize(width: 100_000, height: lane))
-                let naturalWidth = Double(text.desiredSize.width), naturalHeight = Double(text.desiredSize.height)
+                // Include the space before an intermediate sign in the stretch
+                // denominator, so it remains a visible gap before the next run.
+                let naturalWidth = measureTimelineText(segment.text), naturalHeight = Double(text.desiredSize.height)
                 guard naturalWidth > 0 else { continue }
                 let transform = CompositeTransform(); transform.scaleX = segment.naturalWidth ? 1 : textWidth / naturalWidth
                 text.renderTransform = transform; text.protectedCursor = bandTextCursor

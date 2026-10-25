@@ -28,7 +28,12 @@ extension WindowsEditor {
             ])
         ], spacing: 20)
         let closeReactions = check("Fermer automatiquement les réacs", draft.closeReactions)
-        let font = textField(draft.fontName), size = textField(String(Int(draft.fontSize)))
+        let families = WindowsSystemFonts.families(including: draft.fontName)
+        let font = ComboBox(); font.isTextSearchEnabled = true
+        font.horizontalAlignment = .stretch
+        for family in families { font.items.append(family) }
+        font.selectedIndex = Int32(families.firstIndex(of: draft.fontName) ?? 0)
+        let size = textField(String(Int(draft.fontSize)))
         let speed = textField(String(Int(draft.pixelsPerSecond))), height = textField(String(Int(draft.bandHeight)))
         let grid = check("Grille et signes", draft.showGrid), detection = check("Détection", draft.showDetection)
         let band = stack([
@@ -63,7 +68,7 @@ extension WindowsEditor {
             draft.checkUpdates = updates.isChecked ?? false; draft.prefixCopies = prefix.isChecked ?? true
             draft.automaticSave = automatic.isChecked ?? false; draft.saveInterval = minutes
             draft.closeReactions = closeReactions.isChecked ?? false
-            draft.fontName = font.text; draft.fontSize = fontSize; draft.pixelsPerSecond = pixels
+            draft.fontName = families[Int(max(0, font.selectedIndex))]; draft.fontSize = fontSize; draft.pixelsPerSecond = pixels
             draft.bandHeight = bandHeight
             draft.showGrid = grid.isChecked ?? true; draft.showDetection = detection.isChecked ?? true
             draft.showControlAtLaunch = control.isChecked ?? false; draft.videoOffsetMilliseconds = delay

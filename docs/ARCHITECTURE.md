@@ -156,3 +156,15 @@ bande reste fractionnaire et animé indépendamment par Windows Composition.
 
 La conversion vers les ticks WinRT arrondit vers le haut pour ne pas retomber
 avant une borne à cause de la représentation flottante des secondes.
+
+Le mode Affichage > Plein écran est un mode vidéo dans la fenêtre sur macOS et
+Windows : la vidéo occupe l'espace de travail, les menus restent accessibles,
+et la fenêtre conserve son état et ses dimensions. Alt/Option + Entrée bascule
+le mode ; Échap restaure l'éditeur et ses séparateurs. Le lecteur et sa position
+sont conservés. Ce mode est indépendant de l'écran de contrôle.
+
+Le sélecteur de police liste les familles installées : NSFontManager sur macOS,
+DirectWrite GetSystemFontCollection sur Windows. PreludeFLF reste disponible
+en tête de liste, et la valeur déjà enregistrée reste sélectionnable. Les noms
+sont triés ; la ComboBox WinUI permet la recherche native au clavier. DirectWrite
+est fourni par Windows : aucune dépendance redistribuable supplémentaire.

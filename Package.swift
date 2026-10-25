@@ -22,7 +22,7 @@ if FileManager.default.fileExists(atPath: root.appendingPathComponent(".windows/
     dependencies.append(.package(path: ".windows/Projections"))
     products.append(.executable(name: "CappellaWindows", targets: ["CappellaWindows"]))
     targets += [
-        .target(name: "CWindowsInterop", linkerSettings: [.linkedLibrary("ole32"), .linkedLibrary("shell32"), .linkedLibrary("mfplat"), .linkedLibrary("mfreadwrite"), .linkedLibrary("mfuuid")]),
+        .target(name: "CWindowsInterop", linkerSettings: [.linkedLibrary("ole32"), .linkedLibrary("shell32"), .linkedLibrary("mfplat"), .linkedLibrary("mfreadwrite"), .linkedLibrary("mfuuid"), .linkedLibrary("dwrite")]),
         .executableTarget(name: "CappellaWindows", dependencies: ["CappellaCore", "CWindowsInterop",
             .product(name: "WinUI", package: "Projections"), .product(name: "UWP", package: "Projections"),
             .product(name: "WinAppSDK", package: "Projections"), .product(name: "WindowsFoundation", package: "Projections")

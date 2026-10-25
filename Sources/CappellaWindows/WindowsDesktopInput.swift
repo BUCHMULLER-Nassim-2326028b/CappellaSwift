@@ -15,7 +15,7 @@ struct WindowsResizeRegion {
 
 extension WindowsEditor {
     func beginResize(_ region: WindowsResizeRegion) {
-        guard !isClosed, !dialogShowing, !isResizing else { return }
+        guard !isClosed, !dialogShowing, !isResizing, !videoOnly else { return }
         var cursor = POINT()
         guard GetCursorPos(&cursor) else { return }
         resizeRegion = region

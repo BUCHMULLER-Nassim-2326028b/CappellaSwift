@@ -67,6 +67,8 @@ extension WindowsEditor {
         if FileManager.default.fileExists(atPath: path.path) { mire.source = BitmapImage(Uri(path.absoluteString)) }
         mire.stretch = .uniformToFill; videoPanel.children.append(mire); previewImage = mire
         videoView.areTransportControlsEnabled = false
+        videoView.stretch = .uniform
+        videoPanel.background = ink(0)
         try? videoView.setMediaPlayer(media.video)
         videoPanel.children.append(videoView)
         try? Grid.setColumn(videoPanel, 2); main.children.append(videoPanel)
@@ -90,6 +92,29 @@ extension WindowsEditor {
             bandRow.height = GridLength(value: height, gridUnitType: .pixel)
         }, finish: { [weak self] in self?.savePreferences() })
         try? Grid.setRow(bandDivider, 2); root.children.append(bandDivider)
+
+        var savedLeft = leftColumn.width, savedDivider = dividerColumn.width, savedRight = rightColumn.width
+        let hiddenRows = [dividerRow, scrollRow, bandRow]
+        var savedHeights = hiddenRows.map { $0.height }
+        applyVideoOnlyLayout = { [weak self] enabled in
+            guard let self else { return }
+            if enabled {
+                savedLeft = leftColumn.width; savedDivider = dividerColumn.width; savedRight = rightColumn.width
+                savedHeights = hiddenRows.map { $0.height }
+                leftColumn.width = GridLength(value: 0, gridUnitType: .pixel)
+                dividerColumn.width = GridLength(value: 0, gridUnitType: .pixel)
+                rightColumn.width = GridLength(value: 1, gridUnitType: .star)
+                for row in hiddenRows { row.height = GridLength(value: 0, gridUnitType: .pixel) }
+            } else {
+                leftColumn.width = savedLeft; dividerColumn.width = savedDivider; rightColumn.width = savedRight
+                for (row, height) in zip(hiddenRows, savedHeights) { row.height = height }
+            }
+            let visibility: WinUI.Visibility = enabled ? .collapsed : .visible
+            left.visibility = visibility; verticalDivider.visibility = visibility
+            bandDivider.visibility = visibility; timelineScrollbar.visibility = visibility
+            bandContainer.visibility = visibility
+            if !enabled { appliedBandHeight = 0; fitBandHeight() }
+        }
     }
     func installWindowChrome() {
         let captionRow = RowDefinition(); captionRow.height = GridLength(value: 32, gridUnitType: .pixel)
@@ -141,7 +166,7 @@ extension WindowsEditor {
         if FileManager.default.fileExists(atPath: logo.path) { titleLogo.source = BitmapImage(Uri(logo.absoluteString)) }
     }
     func fitBandHeight() {
-        guard root.actualHeight > 0, let row = root.rowDefinitions.getAt(4) else { return }
+        guard !videoOnly, root.actualHeight > 0, let row = root.rowDefinitions.getAt(4) else { return }
         let height = min(max(120, root.actualHeight - 190), max(120, self.document.preferences.bandHeight))
         if height != appliedBandHeight {
             row.height = GridLength(value: height, gridUnitType: .pixel)
