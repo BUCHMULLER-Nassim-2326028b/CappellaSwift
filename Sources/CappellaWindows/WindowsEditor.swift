@@ -25,6 +25,10 @@ final class WindowsEditor {
     var resizeCoordinate: Double?
     let resizeTimer = DispatcherTimer()
     var menuChecks: [(ToggleMenuFlyoutItem, () -> Bool)] = []
+    var menuEnabled: [(WinUI.Control, () -> Bool)] = []
+    let recentMenu = MenuFlyoutSubItem()
+    var audioVersionMenuItem: MenuFlyoutItem?
+    var checkingForUpdates = false
     var handledDesktopKeys = Set<UInt>()
     var isClosed = false
     var onClosed: (() -> Void)?
@@ -179,6 +183,9 @@ final class WindowsEditor {
         timer.tick.addHandler { [weak self] _, _ in self?.pollAutosave() }
         try? timer.start()
         refresh()
+        if self.document.preferences.checkUpdates {
+            Task { @MainActor [weak self] in await self?.checkForUpdates() }
+        }
     }
     func refresh() {
         guard !isClosed else { return }

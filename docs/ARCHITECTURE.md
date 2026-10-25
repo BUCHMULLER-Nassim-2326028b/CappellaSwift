@@ -28,6 +28,7 @@ inclut automatiquement les fichiers Swift de chaque cible ; les fichiers propres
 | PCMPlaybackCache | Lecture PCM WAV/AIFF/AIFC directe, lecture normale par blocs sans cache ; cache réservé au reverse et réutilisé avant décodage |
 | ApplicationPreferences | Valeurs enregistrées et validation commune des limites |
 | DialogueSearch / ControlNavigation / PlaybackControls | Recherche, navigation et commandes de lecture |
+| ProjectVerification / ReleaseUpdates | Rapport de vérification du projet et recherche de versions publiées sur GitHub |
 
 WindowsDocument et ProjectSession restent des adaptateurs de présentation :
 callbacks WinUI ou notifications Combine, choix de fichiers, demandes de
@@ -56,7 +57,8 @@ Ses extensions répartissent les responsabilités :
 | WindowsTimelineScroll | Barre horizontale et navigation dans le projet |
 | WindowsTimelineMotion | Interpolation du transport et animation du défilement |
 | WindowsTimelineText | Saisie native invisible, sélection et curseur dessinés sur la bande |
-| WindowsMenus | Menus, coches et raccourcis |
+| WindowsMenus | Menus, coches, disponibilité des commandes et raccourcis |
+| WindowsMenuActions | Import/export, fichiers récents persistants, positions, vérification et mises à jour |
 | WindowsDesktopInput | Interception des messages clavier, suivi du redimensionnement et fermeture |
 | WindowsDialogs | Infrastructure des dialogues, catégories et actions communes |
 | WindowsSearch | Recherche par texte, rôle, casse et mot entier ; navigation suivante |
@@ -68,6 +70,13 @@ Ses extensions répartissent les responsabilités :
 | WindowsProjectMedia | Chargement et déchargement des médias au changement de projet |
 | WindowsMedia / WindowsAudioPreparation / WindowsReverseAudio | Lecture directe du média, flux PCM à la demande et cache réservé au reverse |
 | WindowsDiagnostics | Marqueurs de lancement utilisés par les contrôles CI |
+
+Les menus Windows reprennent les commandes du Mac, avec Ctrl pour les raccourcis
+usuels de documents et de presse-papiers. Les états disponibles, les pistes, les
+types de signes et VO/VI sont actualisés à partir du document et du transport.
+L'enregistrement micro et la détection automatique des plans restent indisponibles
+sur Windows et leurs commandes sont grisées. Désentrelacer, Haute qualité et
+Machine Orphée restent grisés sur les deux plateformes.
 
 PlaybackControls partage les quatorze vitesses du Shuttle et la vitesse du Jog.
 ControlNavigation partage le choix des signes, phrases, rôles, boucles et plans,

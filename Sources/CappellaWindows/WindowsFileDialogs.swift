@@ -45,6 +45,7 @@ extension WindowsEditor {
             self.document.replace(with: project, url: recovery ? nil : url)
             try loadProjectMedia()
             media.seek(Double(self.document.frame - project.mediaStartFrame) / Double(fps))
+            if !recovery { rememberRecent(url) }
             refresh(); try window.activate()
         } catch { await showError(error.localizedDescription) }
     }
@@ -61,7 +62,9 @@ extension WindowsEditor {
                 if let file = try await picker.pickSaveFileAsync().get() { destination = URL(fileURLWithPath: file.path) }
             }
             guard let destination else { return false }
-            try self.document.save(to: destination, copy: copy); return true
+            try self.document.save(to: destination, copy: copy)
+            if !copy { rememberRecent(destination) }
+            return true
         } catch { await showError(error.localizedDescription); return false }
     }
 }

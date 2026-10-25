@@ -741,19 +741,7 @@ struct EditorView: View {
     }
     private func verify() {
         do {
-            try project.validate()
-            var messages: [String] = []
-            for cue in orderedCues {
-                if cue.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { messages.append("\(Timecode.format(cue.start, fps: project.framesPerSecond)) : phrase vide.") }
-                if cue.roleID == nil { messages.append("\(Timecode.format(cue.start, fps: project.framesPerSecond)) : rôle manquant.") }
-            }
-            for track in 0..<4 {
-                let cues = orderedCues.filter { $0.track == track }
-                for (left, right) in zip(cues, cues.dropFirst()) where left.end > right.start {
-                    messages.append("Piste \(track + 1), \(Timecode.format(right.start, fps: project.framesPerSecond)) : chevauchement de phrases.")
-                }
-            }
-            validationReport = messages.isEmpty ? "Aucune erreur détectée dans les contrôles disponibles : bornes, signes, rôles et chevauchements de phrases." : messages.joined(separator: "\n\n")
+            validationReport = try ProjectVerification.report(for: project)
         } catch { validationReport = error.localizedDescription }
         panel = .validation
     }

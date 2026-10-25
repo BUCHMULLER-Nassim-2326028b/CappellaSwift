@@ -147,7 +147,7 @@ extension WindowsEditor {
                 guard let cue = self.document.selectedCue, input.text == cue.text else { return }
                 self.document.caret = scalarOffset(in: input.text, utf16: Int(input.selectionStart))
                 if textSelectionAnchor == nil && input.selectionLength == 0 { timelineSelectionOrigin = nil }
-                positionTimelineInput(input, cue: cue); resetTimelineCaret()
+                positionTimelineInput(input, cue: cue); resetTimelineCaret(); refreshMenuChecks()
             }
             input.loaded.addHandler { [weak self, weak input] _, _ in
                 guard let self, let input, textEditor === input, self.document.editing, !dialogShowing else { return }

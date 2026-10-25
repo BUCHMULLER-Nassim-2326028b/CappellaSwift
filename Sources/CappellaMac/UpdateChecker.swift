@@ -12,21 +12,12 @@ final class UpdateChecker {
         Task {
             defer { checking = false }
             do {
-                var request = URLRequest(url: URL(string: "https://api.github.com/repos/BUCHMULLER-Nassim-2326028b/CappellaMac/releases/latest")!)
-                request.timeoutInterval = 15
-                request.setValue("application/vnd.github+json", forHTTPHeaderField: "Accept")
-                request.setValue("CappellaMac", forHTTPHeaderField: "User-Agent")
-                let (data, response) = try await URLSession.shared.data(for: request)
-                if (response as? HTTPURLResponse)?.statusCode == 404 {
+                guard let release = try await ReleaseUpdates.latest() else {
                     if userInitiated { message("Aucune version publiée", "Aucune mise à jour n'est encore disponible sur le dépôt Cappella.") }
                     return
                 }
-                guard (response as? HTTPURLResponse)?.statusCode == 200 else { throw URLError(.badServerResponse) }
-                struct Release: Decodable { let tag_name: String }
-                let release = try JSONDecoder().decode(Release.self, from: data)
-                let available = release.tag_name.hasPrefix("v") ? String(release.tag_name.dropFirst()) : release.tag_name
                 let current = AppVersion.current
-                if available.compare(current, options: .numeric) == .orderedDescending {
+                if release.isNewer {
                     let alert = NSAlert(); alert.messageText = "Une mise à jour est disponible"
                     alert.informativeText = "Cappella \(release.tag_name) est disponible. Version actuelle : \(current)."
                     alert.addButton(withTitle: "Voir la version"); alert.addButton(withTitle: "Plus tard")
