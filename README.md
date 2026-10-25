@@ -24,13 +24,13 @@
 **Cappella a été développé à l'origine par Chinkel** pour le travail de doublage.
 Il permet d'écrire et de synchroniser les dialogues avec une vidéo sur une bande rythmo.
 
-Cette réécriture est réalisée par nvssgoat, sans le code source du logiciel original.
-Le travail consiste d'abord à retrouver ses fonctions, son interface et ses raccourcis
-sur les machines actuelles. Ensuite viendront les améliorations : fluidité, édition
-et nouveaux outils, en gardant la compatibilité avec les projets existants.
+Cette réécriture est réalisée par nvssgoat sans le code source original (donc du clean room).
+Un travail de recherche puis reproduction des fonctions, de l'interface et des raccourcis 
+a été effectué. Ensuite viendront les améliorations : UI, fluidité, édition
+et nouveaux outils, gardant la compatibilité avec les projets DetX de l'original.
 
-La première version publique est la 1.0.0. Des fonctions manquent encore et certains
-comportements restent à comparer avec l'original.
+La première version publique 1.0.0 est disponible ! Des fonctions manquent encore et certains
+comportements restent à comparer avec l'original (problème connu : il manque la feature de déplacement de plans).
 
 ## Plateformes et téléchargements
 
