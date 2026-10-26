@@ -43,6 +43,14 @@ SHA256SUMS.txt contient les empreintes des cinq fichiers.
    et les cinq téléchargements. Pour une bêta, cocher **Set as a pre-release**,
    puis cliquer **Publish release**.
 
+Pour autoriser la publication automatique d'une version précise, renseigner la
+variable de dépôt **CAPPELLA_PUBLISH_TAG** dans Settings > Secrets and variables >
+Actions > Variables, par exemple `v1.0.1`. Le workflow **Publish validated GitHub
+release** attend la réussite de la préparation, vérifie le commit du tag et la
+présence des cinq distributions et de SHA256SUMS.txt, puis publie le brouillon.
+Une valeur vide ou un autre tag conserve la publication manuelle. Ne pas stocker
+un jeton dans cette variable : elle contient uniquement le nom du tag.
+
 Aucun brouillon n'est créé si une compilation ou une vérification échoue.
 Le dépôt n'a pas besoin d'un jeton personnel pour publier ce brouillon :
 le workflow utilise le jeton GitHub Actions avec contents: write.

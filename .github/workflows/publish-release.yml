@@ -1,0 +1,54 @@
+name: Publish validated GitHub release
+on:
+  workflow_run:
+    workflows: ['Prepare GitHub release']
+    types: [completed]
+permissions:
+  contents: read
+jobs:
+  publish:
+    if: >-
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'push' &&
+      github.event.workflow_run.head_repository.full_name == github.repository &&
+      vars.CAPPELLA_PUBLISH_TAG != '' &&
+      github.event.workflow_run.head_branch == vars.CAPPELLA_PUBLISH_TAG
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Verify distributions and publish the requested tag
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ github.event.workflow_run.head_branch }}
+          BUILT_COMMIT: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          set -euo pipefail
+          [[ "$RELEASE_TAG" == v* ]]
+          version="${RELEASE_TAG#v}"
+          ref=$(gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/$RELEASE_TAG")
+          object_type=$(jq -r '.object.type' <<< "$ref")
+          object_sha=$(jq -r '.object.sha' <<< "$ref")
+          if [[ "$object_type" == tag ]]; then
+            object_sha=$(gh api "repos/$GITHUB_REPOSITORY/git/tags/$object_sha" --jq '.object.sha')
+          fi
+          test "$object_sha" = "$BUILT_COMMIT"
+          gh api "repos/$GITHUB_REPOSITORY/releases/tags/$RELEASE_TAG" > release.json
+          jq -e --arg tag "$RELEASE_TAG" '.tag_name == $tag' release.json
+          assets=(
+            "Cappella-$version-macOS-arm64-Portable.zip"
+            "Cappella-$version-Windows-x64-Portable.zip"
+            "Cappella-$version-Windows-x64-Setup.exe"
+            "Cappella-$version-Windows-arm64-Portable.zip"
+            "Cappella-$version-Windows-arm64-Setup.exe"
+            "SHA256SUMS.txt"
+          )
+          for asset in "${assets[@]}"; do
+            jq -e --arg name "$asset" '.assets | any(.name == $name and .state == "uploaded" and .size > 0)' release.json
+          done
+          if [[ $(jq -r '.draft' release.json) == false ]]; then
+            echo "Release already published."
+            exit 0
+          fi
+          release_id=$(jq -r '.id' release.json)
+          gh api --method PATCH "repos/$GITHUB_REPOSITORY/releases/$release_id" -F draft=false -f make_latest=true --jq '.html_url'
