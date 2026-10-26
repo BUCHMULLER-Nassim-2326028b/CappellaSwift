@@ -3,6 +3,7 @@ import Foundation
 /// Playback highlighting is independent of the editor's selected phrase.
 public struct DialogueScriptState: Equatable {
     public let activeIDs: Set<UUID>
+    public let activeLoopID: UUID?
     public let followID: UUID?
     /// The highlight and follow target are constant between these boundaries.
     public let validFrom: Int
@@ -10,7 +11,7 @@ public struct DialogueScriptState: Equatable {
 
     public func contains(frame: Int) -> Bool { frame >= validFrom && frame < validUntil }
 
-    public init(cues: [Cue], frame: Int) {
+    public init(cues: [Cue], frame: Int, loops: [Marker] = []) {
         var lower = Int.min, upper = Int.max
         for cue in cues {
             let boundaries = cue.pendingEnd == true ? [cue.start] : [cue.start, cue.end]
@@ -19,6 +20,14 @@ public struct DialogueScriptState: Equatable {
                 else { upper = min(upper, boundary) }
             }
         }
+        var currentLoop: Marker?
+        for loop in loops {
+            if loop.frame <= frame {
+                lower = max(lower, loop.frame)
+                if currentLoop == nil || loop.frame >= currentLoop!.frame { currentLoop = loop }
+            } else { upper = min(upper, loop.frame) }
+        }
+        activeLoopID = currentLoop?.id
         validFrom = lower; validUntil = upper
         var latestOnTrack: [Int: Int] = [:]
         for cue in cues where cue.start <= frame {

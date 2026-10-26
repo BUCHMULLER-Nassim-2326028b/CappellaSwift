@@ -93,6 +93,8 @@ extension WindowsEditor {
         }, finish: { [weak self] in self?.savePreferences() })
         try? Grid.setRow(bandDivider, 2); root.children.append(bandDivider)
 
+        installReadingSurface(videoPanel: videoPanel)
+
         var savedLeft = leftColumn.width, savedDivider = dividerColumn.width, savedRight = rightColumn.width
         let hiddenRows = [dividerRow, scrollRow, bandRow]
         var savedHeights = hiddenRows.map { $0.height }
@@ -166,7 +168,7 @@ extension WindowsEditor {
         if FileManager.default.fileExists(atPath: logo.path) { titleLogo.source = BitmapImage(Uri(logo.absoluteString)) }
     }
     func fitBandHeight() {
-        guard !videoOnly, root.actualHeight > 0, let row = root.rowDefinitions.getAt(4) else { return }
+        guard !videoOnly, !readingMode, root.actualHeight > 0, let row = root.rowDefinitions.getAt(4) else { return }
         let height = min(max(120, root.actualHeight - 190), max(120, self.document.preferences.bandHeight))
         if height != appliedBandHeight {
             row.height = GridLength(value: height, gridUnitType: .pixel)

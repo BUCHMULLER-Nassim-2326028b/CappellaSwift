@@ -190,9 +190,14 @@ public extension Project {
     }
 
     func scriptText() -> String {
-        let lines = cues.sorted { $0.start < $1.start }.map { cue in
-            let role = roles.first { $0.id == cue.roleID }?.name ?? "Sans rôle"
-            return "\(Timecode.format(cue.start, fps: framesPerSecond)) - \(role) :\n\(cue.text)\n"
+        let names = Dictionary(uniqueKeysWithValues: roles.map { ($0.id, $0.name) })
+        let lines = scriptEntries().map { entry -> String in
+            switch entry {
+            case .loop(let marker): return "boucle " + marker.label + "\n"
+            case .cue(let cue):
+                let role = cue.roleID.flatMap { names[$0] } ?? "Sans rôle"
+                return "\(Timecode.format(cue.start, fps: framesPerSecond)) - \(role) :\n\(cue.text)\n"
+            }
         }
         return "\(title)\n\(author)\n\n" + lines.joined(separator: "\n")
     }

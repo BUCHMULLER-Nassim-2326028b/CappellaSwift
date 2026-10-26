@@ -28,6 +28,8 @@ inclut automatiquement les fichiers Swift de chaque cible ; les fichiers propres
 | PCMPlaybackCache | Lecture PCM WAV/AIFF/AIFC directe, lecture normale par blocs sans cache ; cache réservé au reverse et réutilisé avant décodage |
 | ApplicationPreferences | Valeurs enregistrées et validation commune des limites |
 | DialogueSearch / ControlNavigation / PlaybackControls | Recherche, navigation et commandes de lecture |
+| ReadingLayout / RythmoMovieOptions | Scène du mode lecture en coordonnées communes, géométrie de la bande et paramètres MP4 |
+| ScriptEntry / ScriptDocument / ScriptExportOptions | Ordre commun des boucles et répliques ; export RTF avec page de garde, croisillé, listes de rôles et script classique ou documentaire |
 | ProjectVerification / ReleaseUpdates | Rapport de vérification du projet et recherche de versions publiées sur GitHub |
 
 WindowsDocument et ProjectSession restent des adaptateurs de présentation :
@@ -52,7 +54,10 @@ Ses extensions répartissent les responsabilités :
 |---|---|
 | WindowsLayout | Disposition, séparateurs, barre de titre et thème de la fenêtre |
 | WindowsCartouche | Timecode, boucle courante, durée et état VO/VI |
-| WindowsScriptView | Liste des répliques et mise à jour de leur sélection |
+| WindowsScriptView | Boucles et répliques du script, suivi et texte actif |
+| WindowsReadingView | Présentation lecture avec vidéo, bande beige et panneau timecode/rôles |
+| WindowsRythmoMovie / WindowsRythmoMoviePanel | Export MP4 indépendant du lecteur, options et annulation |
+| WindowsScriptExport | Options natives de formatage du document, partagées avec le Mac |
 | WindowsBand | Dessin de la bande, signes et interactions du pointeur |
 | WindowsTimelineScroll | Barre horizontale et navigation dans le projet |
 | WindowsTimelineMotion | Interpolation du transport et animation du défilement |
@@ -177,3 +182,37 @@ DirectWrite GetSystemFontCollection sur Windows. PreludeFLF reste disponible
 en tête de liste, et la valeur déjà enregistrée reste sélectionnable. Les noms
 sont triés ; la ComboBox WinUI permet la recherche native au clavier. DirectWrite
 est fourni par Windows : aucune dépendance redistribuable supplémentaire.
+
+## Mode lecture et export vidéo
+
+Affichage > Mode lecture présente la vidéo à gauche, les informations à droite
+et une bande beige sur quatre pistes en bas. Échap revient à l'éditeur.
+Le repère fixe est au premier sixième de la largeur. Les segments de texte
+utilisent les mêmes ancrages et étirements que la bande d'édition.
+
+Fichier > Exporter > Rythmo MP4 propose 720p ou 1080p, 24/25/30/60 images par
+seconde, une plage de timecodes et le son VO, VI ou muet. Les timecodes restent
+exprimés dans la cadence du projet, indépendamment de la cadence de sortie.
+Sans vidéo, la zone image reste noire. Le son externe est prioritaire sur le son
+intégré au film et suit le routage commun AudioRouting/PCMChannelPreparation.
+
+ReadingLayout fournit la même scène aux interfaces et aux exports. Le Mac la
+dessine avec Core Text et encode avec AVAssetWriter. Windows la présente avec
+WinUI et l'exporte hors écran avec GDI et le sink writer Media Foundation,
+en H.264/NV12 et AAC. Aucune bibliothèque FFmpeg n'est distribuée. Le travail
+s'effectue sur un worker avec des lecteurs indépendants, une progression et une
+annulation. Un fichier temporaire voisin de la destination est remplacé seulement
+après la finalisation du MP4 ; les fichiers incomplets sont supprimés.
+
+Le panneau des rôles du mode lecture défile vers le bas. Le titre, le timecode et
+le numéro de boucle partagent la scène exportée. La commande MP4 active ce mode
+sur les deux plateformes ; elle exporte toujours ReadingLayout.
+
+MoviePCMSource sélectionne les canaux VO/VI par blocs, sans copies complètes des
+WAV/AIFF. Les autres codecs passent par le décodeur natif, puis utilisent ce même
+lecteur. Les producteurs audio et vidéo de l'export Mac avancent indépendamment
+pour respecter la disponibilité de chaque entrée AVAssetWriter.
+Sous Windows, une image source inchangée est réutilisée après son décodage et son
+redimensionnement. CWindowsInterop utilise -O2 même en Debug pour les boucles de
+conversion NV12 et de traitement PCM. La progression indique les images réellement
+exportées, avec un pourcentage décimal.

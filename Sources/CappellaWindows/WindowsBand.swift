@@ -36,6 +36,7 @@ extension WindowsEditor {
     }
     func renderBand(reuse: Bool = false) {
         guard !isClosed, !videoOnly else { return }
+        if readingMode { renderReading(); return }
         let width = bandContainer.actualWidth, height = bandContainer.actualHeight
         guard width > 0, height > 0 else { return }
         let position = bandDisplayFrame

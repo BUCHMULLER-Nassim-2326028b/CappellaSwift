@@ -83,6 +83,8 @@ dans Applications.
 - Recherche dans les dialogues, avec filtre par rôle, casse et mots entiers.
 - Lecture et écriture DetX, format de travail .cappellaproject et sauvegarde automatique désactivable.
 - Préférences enregistrées, choix des polices système et mode vidéo pleine fenêtre.
+- Mode lecture inspiré de Joker : vidéo, panneau timecode/rôles et bande beige.
+- Export de cette présentation en MP4, avec plage de timecodes, cadence, définition et son VO/VI.
 - Remplacement du projet courant avec demande d'enregistrement et ouverture de plusieurs instances.
 
 ## Ce qui reste à faire

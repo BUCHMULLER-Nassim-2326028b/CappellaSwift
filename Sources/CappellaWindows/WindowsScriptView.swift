@@ -8,12 +8,25 @@ import WindowsFoundation
 extension WindowsEditor {
     func refreshScript() {
         if scriptRevision != self.document.revision {
-            let cues = self.document.project.cues.sorted { $0.start < $1.start }
+            let entries = self.document.project.scriptEntries()
+            let cues = entries.compactMap { entry -> Cue? in
+                if case .cue(let cue) = entry { return cue }
+                return nil
+            }
             scriptCues = cues; scriptPlaybackState = nil
-            let order = cues.map(\.id)
-            if order != scriptOrder {
+            let order = entries.map(\.id)
+            if order != scriptOrder || scriptLoops != self.document.project.loops {
                 script.children.clear(); scriptRows.removeAll(); scriptModels.removeAll(); scriptSelection = nil; scriptFollowID = nil
-                for cue in cues {
+                scriptLoopRows.removeAll()
+                for entry in entries {
+                    if case .loop(let marker) = entry {
+                        let heading = label("boucle " + marker.label, size: 16)
+                        heading.fontFamily = FontFamily("Courier New")
+                        heading.margin = Thickness(left: 6, top: 10, right: 6, bottom: 6)
+                        script.children.append(heading); scriptLoopRows[marker.id] = heading
+                        continue
+                    }
+                    guard case .cue(let cue) = entry else { continue }
                     let header = label("", size: 11); header.fontFamily = FontFamily("Courier New")
                     let text = label("", size: 12); text.fontFamily = FontFamily("Courier New"); text.textWrapping = .wrap
                     let container = Border(); container.child = stack([header, text], spacing: 2)
@@ -26,7 +39,7 @@ extension WindowsEditor {
                     }
                     script.children.append(container); scriptRows[cue.id] = (container, header, text)
                 }
-                scriptOrder = order
+                scriptOrder = order; scriptLoops = self.document.project.loops
             }
             let rolesChanged = scriptRoles != self.document.project.roles || scriptFPS != fps
             let names = Dictionary(uniqueKeysWithValues: self.document.project.roles.map { ($0.id, $0.name) })
@@ -44,19 +57,29 @@ extension WindowsEditor {
         refreshScriptPlayback()
     }
     func refreshScriptPlayback() {
-        guard !videoOnly else { return }
+        guard !videoOnly, !readingMode else { return }
         if scriptRevision != self.document.revision { refreshScript(); return }
         let revision = self.document.revision, frame = self.document.frame
         let restyle = scriptPlaybackRevision != revision || scriptPlaybackDark != dark
         guard restyle || scriptPlaybackFrame != frame || scriptSelection != self.document.selection else { return }
         if scriptPlaybackState?.contains(frame: frame) != true {
-            scriptPlaybackState = DialogueScriptState(cues: scriptCues, frame: frame)
+            scriptPlaybackState = DialogueScriptState(cues: scriptCues, frame: frame, loops: scriptLoops)
         }
         guard let state = scriptPlaybackState else { return }
         let affected = restyle ? Set(scriptRows.keys) : scriptActiveIDs.symmetricDifference(state.activeIDs)
+        let affectedLoops: Set<Foundation.UUID>
+        if restyle { affectedLoops = Set(scriptLoopRows.keys) }
+        else if scriptActiveLoopID != state.activeLoopID {
+            affectedLoops = Set([scriptActiveLoopID, state.activeLoopID].compactMap { $0 })
+        } else { affectedLoops = [] }
         // No brush allocation or XAML setters unless a row actually changes.
-        let normal = affected.isEmpty ? nil : ink(dark ? 0xE6E6E6 : 0x061424)
-        let active = affected.isEmpty ? nil : ink(dark ? 0xFF9999 : 0xBA2020)
+        let needsColor = !affected.isEmpty || !affectedLoops.isEmpty
+        let normal = needsColor ? ink(dark ? 0xE6E6E6 : 0x061424) : nil
+        let active = needsColor ? ink(dark ? 0xFF9999 : 0xBA2020) : nil
+        for id in affectedLoops {
+            scriptLoopRows[id]?.foreground = id == state.activeLoopID ? active : normal
+        }
+        scriptActiveLoopID = state.activeLoopID
         for id in affected {
             guard let row = scriptRows[id] else { continue }
             let current = state.activeIDs.contains(id)

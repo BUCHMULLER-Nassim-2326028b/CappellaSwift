@@ -65,6 +65,7 @@ extension WindowsEditor {
         let exportMenu = MenuFlyoutSubItem(); exportMenu.text = "Exporter"
         exportMenu.items.append(asyncItem("Document DetX…") { [unowned self] in await exportDetX() })
         exportMenu.items.append(asyncItem("Script…", shortcut: "Ctrl+E") { [unowned self] in await exportText(crossTable: false) })
+        exportMenu.items.append(asyncItem("Rythmo MP4…") { [unowned self] in await exportRythmoMovie() })
         exportMenu.items.append(asyncItem("Croisillé CSV…") { [unowned self] in await exportText(crossTable: true) })
         recentMenu.text = "Fichiers récents"; refreshRecentMenu()
         menu("Fichier", [
@@ -169,6 +170,7 @@ extension WindowsEditor {
         menu("Affichage", [
             checkedMenuItem("Détection", shortcut: "Ctrl+Alt+F9", checked: { [unowned self] in self.document.preferences.showDetection }) { [unowned self] in self.document.preferences.showDetection.toggle(); savePreferences(); refresh() },
             checkedMenuItem("Grille et signes", shortcut: "Ctrl+Alt+F10", checked: { [unowned self] in self.document.preferences.showGrid }) { [unowned self] in self.document.preferences.showGrid.toggle(); savePreferences(); refresh() },
+            checkedMenuItem("Mode lecture", checked: { [unowned self] in readingMode }) { [unowned self] in toggleReadingMode() },
             checkedMenuItem("Plein écran", shortcut: "Alt+Entrée", checked: { [unowned self] in videoOnly }) { [unowned self] in toggleFullScreen() }, MenuFlyoutSeparator(),
             menuItem("Zoom avant", shortcut: "+") { [unowned self] in zoom(1.25) },
             menuItem("Zoom arrière", shortcut: "-") { [unowned self] in zoom(0.8) }, MenuFlyoutSeparator(),
@@ -297,6 +299,10 @@ extension WindowsEditor {
     }
     func handleShortcut(key: Int, ctrl: Bool, alt: Bool, shift: Bool, isRepeat: Bool) -> Bool {
         guard !dialogShowing, !isClosed else { return false }
+        if key == 27 && readingMode && !ctrl && !alt {
+            if !isRepeat { toggleReadingMode() }
+            return true
+        }
         if key == 27 && videoOnly && !ctrl && !alt {
             if !isRepeat { toggleFullScreen() }
             return true

@@ -26,6 +26,7 @@
     "Microsoft.UI.Xaml.Controls.MenuFlyoutSubItem",
     "Microsoft.UI.Xaml.Controls.NavigationView",
     "Microsoft.UI.Xaml.Controls.Primitives.ScrollBar",
+    "Microsoft.UI.Xaml.Controls.RadioButton",
     "Microsoft.UI.Xaml.Controls.RowDefinition",
     "Microsoft.UI.Xaml.Controls.StackPanel",
     "Microsoft.UI.Xaml.Controls.TextBlock",

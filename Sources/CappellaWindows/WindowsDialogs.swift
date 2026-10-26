@@ -233,13 +233,29 @@ extension WindowsEditor {
         } catch { await showError(error.localizedDescription) }
     }
     func exportText(crossTable: Bool) async {
+        let project = self.document.project
+        let options: ScriptExportOptions?
+        if crossTable { options = nil }
+        else {
+            guard let chosen = await scriptExportOptions() else { return }
+            options = chosen
+        }
         do {
             let picker = FileSavePicker(); try attachPicker(picker)
-            picker.suggestedFileName = self.document.project.title
-            picker.fileTypeChoices.insert(crossTable ? "Croisillé CSV" : "Script texte", [crossTable ? ".csv" : ".txt"].toVector())
+            picker.suggestedFileName = project.title
+            if crossTable { picker.fileTypeChoices.insert("Croisillé CSV", [".csv"].toVector()) }
+            else {
+                picker.fileTypeChoices.insert("Script RTF", [".rtf"].toVector())
+                picker.fileTypeChoices.insert("Script texte", [".txt"].toVector())
+            }
             guard let file = try await picker.pickSaveFileAsync().get() else { return }
-            let text = crossTable ? self.document.project.crossTableCSV() : self.document.project.scriptText()
-            try text.write(to: URL(fileURLWithPath: file.path), atomically: true, encoding: .utf8)
+            let data: Data
+            if let options {
+                if URL(fileURLWithPath: file.path).pathExtension.lowercased() == "txt" {
+                    data = Data(ScriptDocument.text(project: project, options: options).utf8)
+                } else { data = ScriptDocument.rtf(project: project, options: options) }
+            } else { data = Data(project.crossTableCSV().utf8) }
+            try data.write(to: URL(fileURLWithPath: file.path), options: .atomic)
         } catch { await showError(error.localizedDescription) }
     }
     func showProjection() {

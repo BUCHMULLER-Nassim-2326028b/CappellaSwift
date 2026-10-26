@@ -7,12 +7,12 @@ func cappellaFunctionKey(_ number: Int) -> KeyEquivalent {
 }
 
 enum EditorAction {
-    case openMedia, openVI, importDetX, importRoles, exportDetX, exportScript, exportCrossTable
+    case openMedia, openVI, importDetX, importRoles, exportDetX, exportScript, exportCrossTable, exportMovie
     case roles, changeRole, properties, find, goTimecode, shift, timestamp, check, preferences
     case undo, redo
     case playPause, stop, step(Int), rate(Float), shuttle(Double), jog(Int), navigate(String, Int)
     case addPhrase, deletePhrase, deleteSelection, track(Int), mode, addSign(String), deleteSign, shiftSign(Int), voiceOff
-    case addLoop, addShot, markPosition, positions, zoom(Double), grid, detection, fullScreen, projection
+    case addLoop, addShot, markPosition, positions, zoom(Double), grid, detection, fullScreen, projection, readingMode
     case toggleVI, mute, volume(Float), recordAudio, detectShots
     case detachSign, changeSignType(String)
     case moveTrack(Int), relativeTrack(Int), cancelPhrase, findNext, reaction(String), shiftAnchor(Int), detachSigns, jumpAnchor(Int), copyPhrase, cutPhrase, pastePhrase
@@ -26,6 +26,7 @@ struct EditorCommandState: Equatable {
     var showGrid = true
     var showDetection = true
     var videoOnly = false
+    var readingMode = false
     var recording = false
     var usingVI = false
     var detectionMode = false
@@ -152,6 +153,7 @@ struct CappellaCommands: Commands {
         CommandMenu("Affichage") {
             Toggle("Détection", isOn: Binding(get: { editor?.showDetection ?? true }, set: { _ in run(.detection) })).keyboardShortcut(cappellaFunctionKey(9), modifiers: [.control, .option])
             Toggle("Grille et signes", isOn: Binding(get: { editor?.showGrid ?? true }, set: { _ in run(.grid) })).keyboardShortcut(cappellaFunctionKey(10), modifiers: [.control, .option])
+            Toggle("Mode lecture", isOn: Binding(get: { editor?.state.readingMode ?? false }, set: { _ in run(.readingMode) }))
             Toggle("Plein écran", isOn: Binding(get: { editor?.videoOnly ?? false }, set: { _ in run(.fullScreen) })).keyboardShortcut(.return, modifiers: [.option])
             Divider()
             Button("Zoom avant") { run(.zoom(1.25)) }.keyboardShortcut("+", modifiers: [])
@@ -352,6 +354,7 @@ private struct CappellaFileCommands: Commands {
             Menu("Exporter") {
                 Button("Document DetX…") { run(.exportDetX) }
                 Button("Script…") { run(.exportScript) }.keyboardShortcut("e")
+                Button("Rythmo MP4…") { run(.exportMovie) }
                 Button("Croisillé CSV…") { run(.exportCrossTable) }
             }
             Button("Propriétés…") { run(.properties) }.keyboardShortcut("p", modifiers: .control)

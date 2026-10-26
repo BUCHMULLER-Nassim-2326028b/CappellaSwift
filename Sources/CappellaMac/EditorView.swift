@@ -6,7 +6,7 @@ import CappellaCore
 import CappellaSession
 
 private enum EditorPanel: String, Identifiable {
-    case shotDetection, chooseRole, roles, importRoles, properties, find, timecode, shift, timestamp, positions, preferences, validation
+    case shotDetection, chooseRole, roles, importRoles, properties, find, timecode, shift, timestamp, positions, preferences, validation, scriptExport, movieExport
     var id: String { rawValue }
 }
 
@@ -39,6 +39,8 @@ struct EditorView: View {
     @State private var timelineWheelScroll = TimelineWheelScroll()
     @State private var detectionMode = false
     @State private var videoOnly = false
+    @State private var readingMode = false
+    @State private var readingLayout = ReadingLayout(project: Project())
     @State private var panel: EditorPanel?
     @State private var search = DialogueSearch()
     @State private var searchMessage = ""
@@ -46,6 +48,9 @@ struct EditorView: View {
     @State private var input = ""
     @State private var error: String?
     @State private var validationReport = ""
+    @State private var scriptEntries: [ScriptEntry] = []
+    @State private var orderedCues: [Cue] = []
+    @State private var pendingScriptExport: ScriptExportOptions?
     @State private var lastScrolledCue: UUID?
     @State private var rolesToImport: [Role] = []
     @State private var pasteCandidate: Cue?
@@ -59,10 +64,9 @@ struct EditorView: View {
     @AppStorage("rythmo.detection") private var showDetection = true
     private var frame: Int { project.mediaStartFrame + Timeline.frame(at: transport.seconds, fps: project.framesPerSecond, playing: transport.rate != 0) }
     private var selectedCue: Cue? { project.cues.first { $0.id == selection } }
-    private var orderedCues: [Cue] { project.cues.sorted { $0.start == $1.start ? $0.track < $1.track : $0.start < $1.start } }
     private var commandState: EditorCommandState {
         EditorCommandState(currentTrack: currentTrack, hasSelection: selection != nil, hasSign: selectedSign != nil,
-                           showGrid: showGrid, showDetection: showDetection, videoOnly: videoOnly,
+                           showGrid: showGrid, showDetection: showDetection, videoOnly: videoOnly, readingMode: readingMode,
                            recording: recorder.recording, usingVI: transport.usingVI,
                            detectionMode: detectionMode, playbackRate: Double(transport.rate),
                            canUndo: ProjectSession.shared.canUndo, canRedo: ProjectSession.shared.canRedo)
@@ -79,7 +83,7 @@ struct EditorView: View {
                         }
                         .frame(minWidth: 310, idealWidth: geometry.size.width * 0.445, maxWidth: .infinity, maxHeight: .infinity)
                         Group {
-                            if videoOnly { Color.clear } else { videoPane }
+                            if videoOnly || readingMode { Color.clear } else { videoPane }
                         }.frame(minWidth: 350, maxWidth: .infinity, maxHeight: .infinity)
                     }
                     TimelineScroller(project: project, frame: frame, mediaDuration: transport.duration,
@@ -116,9 +120,14 @@ struct EditorView: View {
                         .frame(height: rythmoHeight)
                         .clipped()
                 }
-                .opacity(videoOnly ? 0 : 1)
-                .allowsHitTesting(!videoOnly)
-                .accessibilityHidden(videoOnly)
+                .opacity(videoOnly || readingMode ? 0 : 1)
+                .allowsHitTesting(!videoOnly && !readingMode)
+                .accessibilityHidden(videoOnly || readingMode)
+                if readingMode {
+                    ReadingView(layout: readingLayout,
+                        frame: Double(project.mediaStartFrame) + transport.seconds * Double(project.framesPerSecond),
+                        player: transport.player, videoOffset: videoOffsetMilliseconds / 1000)
+                }
                 if videoOnly { videoPane.frame(maxWidth: .infinity, maxHeight: .infinity) }
             }
         }
@@ -128,6 +137,7 @@ struct EditorView: View {
         .focusedSceneObject(commandActions)
         .onChange(of: commandState) { commandActions.state = $0 }
         .onAppear {
+            rebuildScript()
             commandActions.perform = perform
             commandActions.state = commandState
             for index in project.cues.indices where project.cues[index].signs == nil { project.cues[index].signs = project.cues[index].anchors }
@@ -141,35 +151,69 @@ struct EditorView: View {
             StartupSmokeCheck.recordEditorAppearance(cueCount: project.cues.count)
         }
         .onDisappear { commandActions.perform = { _ in }; transport.close(); projection.close(); shotTask?.cancel() }
-        .sheet(item: $panel) { activePanel in panelView(activePanel) }
+        .onChange(of: project.cues) { _ in rebuildScript() }
+        .onChange(of: project.loops) { _ in rebuildScript() }
+        .onChange(of: project.shots) { _ in rebuildReadingLayout() }
+        .onChange(of: project.roles) { _ in rebuildReadingLayout() }
+        .onChange(of: project.title) { _ in rebuildReadingLayout() }
+        .onChange(of: project.framesPerSecond) { _ in rebuildReadingLayout() }
+        .onChange(of: pixelsPerSecond) { _ in rebuildReadingLayout() }
+        .sheet(item: $panel, onDismiss: {
+            guard let options = pendingScriptExport else { return }
+            pendingScriptExport = nil
+            exportData(type: .rtf, name: "Script.rtf") { ScriptDocument.rtf(project: project, options: options) }
+        }) { activePanel in panelView(activePanel) }
         .alert("Cappella", isPresented: Binding(get: { error != nil || transport.error != nil || recorder.error != nil }, set: {
             if !$0 { error = nil; transport.error = nil; recorder.error = nil }
         })) { Button("OK") { error = nil; transport.error = nil; recorder.error = nil } } message: { Text(error ?? transport.error ?? recorder.error ?? "") }
     }
 
+    private func rebuildReadingLayout() {
+        readingLayout = ReadingLayout(project: project, pixelsPerSecond: pixelsPerSecond)
+    }
+
+    private func rebuildScript() {
+        rebuildReadingLayout()
+        scriptEntries = project.scriptEntries()
+        orderedCues = scriptEntries.compactMap { entry in
+            if case .cue(let cue) = entry { return cue }
+            return nil
+        }
+    }
+
     private var scriptPane: some View {
         ScrollViewReader { proxy in
-            let playback = DialogueScriptState(cues: orderedCues, frame: frame)
+            let playback = DialogueScriptState(cues: orderedCues, frame: frame, loops: project.loops)
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 15) {
-                    ForEach(orderedCues) { cue in
-                        VStack(alignment: .leading, spacing: 2) {
-                            HStack(alignment: .firstTextBaseline, spacing: 3) {
-                                Text(Timecode.format(cue.start, fps: project.framesPerSecond)).font(.custom("Courier New", size: 9))
-                                Text("- \(roleName(cue.roleID)) :").font(.custom("Courier New", size: 12).weight(.bold))
+                    ForEach(scriptEntries) { entry in
+                        switch entry {
+                        case .loop(let marker):
+                            Text("boucle " + marker.label)
+                                .font(.custom("Courier New", size: 16))
+                                .foregroundStyle(playback.activeLoopID == marker.id
+                                    ? (appearance == "dark" ? Color(red: 1, green: 0.6, blue: 0.6) : Color(red: 0.73, green: 0.13, blue: 0.13))
+                                    : (appearance == "dark" ? Color(white: 0.9) : Color(red: 0.02, green: 0.08, blue: 0.14)))
+                                .padding(.horizontal, 8).padding(.top, 6)
+                        case .cue(let cue):
+                            VStack(alignment: .leading, spacing: 2) {
+                                HStack(alignment: .firstTextBaseline, spacing: 3) {
+                                    Text(Timecode.format(cue.start, fps: project.framesPerSecond)).font(.custom("Courier New", size: 9))
+                                    Text("- \(roleName(cue.roleID)) :").font(.custom("Courier New", size: 12).weight(.bold))
+                                }
+                                Text(cue.text).font(.custom("Courier New", size: 12)).frame(maxWidth: .infinity, alignment: .leading)
                             }
-                            Text(cue.text).font(.custom("Courier New", size: 12)).frame(maxWidth: .infinity, alignment: .leading)
-                        }
-                        .foregroundStyle(playback.activeIDs.contains(cue.id)
-                            ? (appearance == "dark" ? Color(red: 1, green: 0.6, blue: 0.6) : Color(red: 0.73, green: 0.13, blue: 0.13))
-                            : (appearance == "dark" ? Color(white: 0.9) : Color(red: 0.02, green: 0.08, blue: 0.14)))
-                        .padding(.vertical, 2).padding(.horizontal, 8)
-                        .contentShape(Rectangle()).id(cue.id)
-                        .onTapGesture(count: 2) { select(cue, edit: true) }
-                        .onTapGesture { select(cue, edit: false) }
-                        .overlay {
-                            GeometryReader { geometry in
-                                TimelineContextMenu(menuAt: { _ in phraseContextMenu(cue.id, nil) }, textRects: [CGRect(origin: .zero, size: geometry.size)])
+                            .foregroundStyle(playback.activeIDs.contains(cue.id)
+                                ? (appearance == "dark" ? Color(red: 1, green: 0.6, blue: 0.6) : Color(red: 0.73, green: 0.13, blue: 0.13))
+                                : (appearance == "dark" ? Color(white: 0.9) : Color(red: 0.02, green: 0.08, blue: 0.14)))
+                            .padding(.vertical, 2).padding(.horizontal, 8)
+                            .contentShape(Rectangle()).id(cue.id)
+                            .onTapGesture(count: 2) { select(cue, edit: true) }
+                            .onTapGesture { select(cue, edit: false) }
+                            .overlay {
+                                GeometryReader { geometry in
+                                    TimelineContextMenu(menuAt: { _ in phraseContextMenu(cue.id, nil) }, textRects: [CGRect(origin: .zero, size: geometry.size)])
+                                }
                             }
                         }
                     }
@@ -377,6 +421,15 @@ struct EditorView: View {
                 }
                 Button("Fermer") { panel = nil }.keyboardShortcut(.cancelAction)
             }.padding().frame(width: 500, height: 340)
+        case .movieExport:
+            RythmoMoviePanel(project: project, pixelsPerSecond: pixelsPerSecond,
+                videoOffset: videoOffsetMilliseconds / 1000,
+                options: RythmoMovieOptions(project: project, mediaDuration: transport.duration, international: transport.usingVI))
+        case .scriptExport:
+            ScriptExportPanel(roles: project.roles) { options in
+                pendingScriptExport = options
+                panel = nil
+            }
         case .preferences: PreferencesPanel()
         case .validation:
             VStack {
@@ -400,11 +453,10 @@ struct EditorView: View {
             do { rolesToImport = try DetX.read(Data(contentsOf: url), fps: project.framesPerSecond).roles; if project.metadata == nil { project.metadata = [:] }; project.metadata?["roles-file"] = url.path; panel = .importRoles }
             catch { self.error = error.localizedDescription }
         case .exportDetX: exportData(type: .detx, name: "\(project.title).detx") { try DetX.write(project) }
-        case .exportScript:
-            exportData(type: .rtf, name: "Script.rtf") {
-                let text = NSAttributedString(string: project.scriptText(), attributes: [.font: NSFont(name: "Courier New", size: 12) ?? NSFont.systemFont(ofSize: 12)])
-                return try text.data(from: NSRange(location: 0, length: text.length), documentAttributes: [.documentType: NSAttributedString.DocumentType.rtf])
-            }
+        case .exportMovie:
+            if !readingMode { perform(.readingMode) }
+            transport.setRate(0); panel = .movieExport
+        case .exportScript: panel = .scriptExport
         case .exportCrossTable: exportData(type: .commaSeparatedText, name: "Croisille.csv") { Data(project.crossTableCSV().utf8) }
         case .changeRole:
             pasteCandidate = nil
@@ -465,7 +517,7 @@ struct EditorView: View {
         case .relativeTrack(let delta): perform(.track(currentTrack + delta))
         case .findNext: findNext()
         case .cancelPhrase:
-            if videoOnly { videoOnly = false } else { cancelPhrase() }
+            if readingMode { readingMode = false } else if videoOnly { videoOnly = false } else { cancelPhrase() }
         case .reaction(let text):
             if closeReactions {
                 pendingText = text; pendingEdit = false; addPhrase(kind: "in_open")
@@ -513,7 +565,12 @@ struct EditorView: View {
         case .zoom(let factor): pixelsPerSecond = min(800, max(15, pixelsPerSecond * factor))
         case .grid: showGrid.toggle()
         case .detection: showDetection.toggle()
+        case .readingMode:
+            if editingPhrase { finishPhrase() }
+            videoOnly = false; readingMode.toggle(); rebuildReadingLayout()
+            NSApplication.shared.keyWindow?.makeFirstResponder(nil)
         case .fullScreen:
+            readingMode = false
             if editingPhrase { finishPhrase() }
             videoOnly.toggle()
             NSApplication.shared.keyWindow?.makeFirstResponder(nil)

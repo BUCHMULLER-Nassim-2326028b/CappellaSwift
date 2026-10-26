@@ -15,7 +15,7 @@ struct WindowsResizeRegion {
 
 extension WindowsEditor {
     func beginResize(_ region: WindowsResizeRegion) {
-        guard !isClosed, !dialogShowing, !isResizing, !videoOnly else { return }
+        guard !isClosed, !dialogShowing, !isResizing, !videoOnly, !readingMode else { return }
         var cursor = POINT()
         guard GetCursorPos(&cursor) else { return }
         resizeRegion = region
@@ -120,6 +120,7 @@ extension WindowsEditor {
     }
     func shutdown() {
         guard !isClosed else { return }
+        cancelMovieExport?(); movieExportProgress?.cancel()
         isClosed = true
         endResize()
         resizeRegions.removeAll()

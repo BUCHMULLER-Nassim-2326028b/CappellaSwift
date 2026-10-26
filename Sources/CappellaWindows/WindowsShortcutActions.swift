@@ -6,6 +6,7 @@ import WinSDK
 
 extension WindowsEditor {
     func toggleFullScreen() {
+        if readingMode { readingMode = false; applyReadingLayout?(false) }
         if isResizing { endResize() }
         self.document.finishEditing(); updateTextEditor()
         videoOnly.toggle()

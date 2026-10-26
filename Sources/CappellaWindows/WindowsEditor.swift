@@ -12,6 +12,11 @@ final class WindowsEditor {
     let media = WindowsMedia()
     let root = Grid()
     var videoOnly = false
+    var readingMode = false
+    lazy var readingSurface = WindowsReadingSurface()
+    var applyReadingLayout: ((Bool) -> Void)?
+    var movieExportProgress: MovieExportProgress?
+    var cancelMovieExport: (() -> Void)?
     var applyVideoOnlyLayout: ((Bool) -> Void)?
     let windowChrome = Grid()
     let customTitleBar = Grid()
@@ -47,7 +52,10 @@ final class WindowsEditor {
     var scriptPlaybackFrame: Int?
     var scriptPlaybackRevision = UInt64.max
     var scriptPlaybackDark: Bool?
-    var scriptOrder: [UUID] = []
+    var scriptOrder: [String] = []
+    var scriptLoops: [Marker] = []
+    var scriptLoopRows: [Foundation.UUID: TextBlock] = [:]
+    var scriptActiveLoopID: Foundation.UUID?
     var scriptRows: [UUID: (border: Border, header: TextBlock, text: TextBlock)] = [:]
     var scriptSelection: UUID?
     var scriptRevision = UInt64.max
