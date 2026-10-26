@@ -110,8 +110,12 @@ finally { $hasher.Dispose() }
 $typeName = 'CappellaPEResources_' + [BitConverter]::ToString($digest).Replace('-', '')
 $resourceType = $typeName -as [type]
 if (!$resourceType) {
-    $resourceType = Add-Type -TypeDefinition $nativeSource.Replace('CappellaPEResources', $typeName) -PassThru
+    # C# may also emit compiler-generated types. Select the named helper,
+    # rather than invoking static methods on Add-Type's complete output array.
+    $compiledTypes = @(Add-Type -TypeDefinition $nativeSource.Replace('CappellaPEResources', $typeName) -PassThru)
+    $resourceType = $compiledTypes | Where-Object { $_.FullName -eq $typeName } | Select-Object -First 1
 }
+if ($resourceType -isnot [type]) { throw "Chargement du module de ressources PE impossible : $typeName" }
 $manifest = @'
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <assembly xmlns="urn:schemas-microsoft-com:asm.v1" manifestVersion="1.0">
