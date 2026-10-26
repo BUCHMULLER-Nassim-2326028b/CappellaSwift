@@ -93,7 +93,8 @@ enum RythmoMovieExporter {
         var nextVideo = videoOutput?.copyNextSampleBuffer(), heldVideo: CMSampleBuffer?
         // Each input has an independent producer. Waiting for audio readiness
         // must never prevent the video input from receiving the next frame.
-        async let audioPump: Void = writeAudio(audioSource, input: audioInput, writer: writer,
+        let preparedAudioSource = audioSource, preparedAudioInput = audioInput
+        async let audioPump: Void = writeAudio(preparedAudioSource, input: preparedAudioInput, writer: writer,
             options: options, sourceStart: start + audioShift, progress: progress)
         for index in 0..<options.frameCount {
             try progress.checkCancellation()

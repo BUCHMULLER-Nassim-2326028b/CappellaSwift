@@ -7,11 +7,20 @@ struct RythmoMoviePanel: View {
     let project: Project
     let pixelsPerSecond: Double
     let videoOffset: Double
-    @State var options: RythmoMovieOptions
+    @State private var options: RythmoMovieOptions
     @Environment(\.dismiss) private var dismiss
-    @State private var start = "", end = "", error = ""
+    @State private var start = ""
+    @State private var end = ""
+    @State private var error = ""
     @State private var progress: MovieExportProgress?
     @State private var worker: Task<Void, Never>?
+
+    init(project: Project, pixelsPerSecond: Double, videoOffset: Double, options: RythmoMovieOptions) {
+        self.project = project
+        self.pixelsPerSecond = pixelsPerSecond
+        self.videoOffset = videoOffset
+        _options = State(initialValue: options)
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
