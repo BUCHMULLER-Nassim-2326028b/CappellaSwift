@@ -27,8 +27,18 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           RELEASE_TAG: ${{ github.ref_name }}
         run: |
-          cd release
           version="${RELEASE_TAG#v}"
+          notes="$RUNNER_TEMP/cappella-release-notes.md"
+          awk -v version="$version" '
+            /^## \[/ {
+              if (found) exit
+              if (index($0, "## [" version "]") == 1) { found=1; next }
+            }
+            found { print }
+            END { if (!found) exit 1 }
+          ' CHANGELOG.md > "$notes"
+          test -s "$notes"
+          cd release
           assets=(
             "Cappella-$version-macOS-arm64-Portable.zip"
             "Cappella-$version-Windows-x64-Portable.zip"
@@ -38,4 +48,4 @@ jobs:
           )
           for asset in "${assets[@]}"; do test -s "$asset"; done
           sha256sum "${assets[@]}" > SHA256SUMS.txt
-          gh release create "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" --verify-tag --draft --generate-notes --title "Cappella $RELEASE_TAG" "${assets[@]}" SHA256SUMS.txt
+          gh release create "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" --verify-tag --draft --notes-file "$notes" --title "Cappella $version" "${assets[@]}" SHA256SUMS.txt

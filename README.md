@@ -13,7 +13,8 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/BUCHMULLER-Nassim-2326028b/CappellaMac/releases">Télécharger</a>
+  <a href="https://github.com/BUCHMULLER-Nassim-2326028b/CappellaSwift/releases">Télécharger</a>
+  · <a href="CHANGELOG.md">Changelog</a>
   · <a href="#roadmap">Roadmap</a>
   · <a href="#ce-qui-reste-à-faire">Ce qui reste à faire</a>
   · <a href="docs/RELEASES.md">Créer une release</a>
@@ -25,18 +26,18 @@
 Il permet d'écrire et de synchroniser les dialogues avec une vidéo sur une bande rythmo.
 
 Cette réécriture est réalisée par nvssgoat sans le code source original (donc du clean room).
-Un travail de recherche puis reproduction des fonctions, de l'interface et des raccourcis 
+Un travail de recherche puis reproduction des fonctions, de l'interface et des raccourcis
 a été effectué. Ensuite viendront les améliorations : UI, fluidité, édition
 et nouveaux outils, gardant la compatibilité avec les projets DetX de l'original.
 
-**La première version publique 1.0.0 est disponible !** 
+Les nouveautés de la version **1.0.1** sont détaillées dans le [changelog](CHANGELOG.md).
 
 Des fonctions manquent encore et certains comportements restent à comparer avec l'original.
 *(problème connu : il manque la feature de déplacement de plans)*
 
 A terme, cette nouvelle version de Cappella n'aura pas simplement l'ambition d'être un simple
 portage moderne mais bien une continuation avec de nouvelles fonctionnalités et des améliorations
-QoL. 
+QoL.
 
 ## Origine du projet
 
@@ -56,7 +57,7 @@ ce backport Windows a été réfléchi et effectué secondairement.
 | Windows | Intel / AMD (x64) | ZIP portable et installateur EXE |
 | Windows | ARM64 | ZIP portable et installateur EXE ; validation encore en cours |
 
-Les versions publiées se trouvent dans les [releases GitHub](https://github.com/BUCHMULLER-Nassim-2326028b/CappellaMac/releases).
+Les versions publiées se trouvent dans les [releases GitHub](https://github.com/BUCHMULLER-Nassim-2326028b/CappellaSwift/releases).
 Les builds de développement sont disponibles dans les artefacts de GitHub Actions.
 Les fichiers portent le même numéro de version que l'application :
 
@@ -75,7 +76,7 @@ dans Applications.
 
 ## Fonctions disponibles
 
-- Script synchronisé avec la rythmo et indication des répliques en cours.
+- Script synchronisé avec la rythmo, titres de boucle et texte rouge pour les répliques et la boucle en cours.
 - Vidéo, timecode et bande à quatre pistes, avec panneaux redimensionnables et thèmes clair/sombre.
 - Édition des dialogues au clic simple, sélection du rôle, portraits et menus contextuels.
 - Signes de synchronisation, boucles, plans, zoom et défilement horizontal.
@@ -84,8 +85,31 @@ dans Applications.
 - Lecture et écriture DetX, format de travail .cappellaproject et sauvegarde automatique désactivable.
 - Préférences enregistrées, choix des polices système et mode vidéo pleine fenêtre.
 - Mode lecture inspiré de Joker : vidéo, panneau timecode/rôles et bande beige.
-- Export de cette présentation en MP4, avec plage de timecodes, cadence, définition et son VO/VI.
+- Export **expérimental** de cette présentation en MP4, avec plage de timecodes, cadence, définition et son VO/VI.
+- Export du script en RTF : page de garde, croisillé, liste des rôles, présentation classique ou documentaire, TC Out et filtre par rôle.
 - Remplacement du projet courant avec demande d'enregistrement et ouverture de plusieurs instances.
+
+## Nouveautés de la 1.0.1
+
+Le **mode lecture**, accessible dans Affichage, reprend une présentation inspirée
+de Joker : vidéo à gauche, timecode et rôles à droite, bande beige en bas.
+Échap revient à l'éditeur. Les boucles apparaissent aussi dans le script de gauche,
+avec la même indication de lecture que les répliques.
+
+L'export de script propose maintenant le formatage du document. Les menus Windows
+reprennent davantage de commandes du Mac, notamment l'import de rôles, les fichiers
+récents et la gestion des positions.
+
+### Export MP4 expérimental
+
+**Fichier > Exporter > Rythmo MP4** exporte la présentation du mode lecture en
+720p ou 1080p, à 24, 25, 30 ou 60 images/s, sur une plage de timecodes et avec le son
+VO, VI ou sans son. La progression et l'annulation sont disponibles.
+
+Cet export peut être très lent, y compris avec l'accélération matérielle demandée.
+Les performances et la compatibilité avec les différents médias restent à valider.
+La 1.0.1 utilise les encodeurs natifs de Windows et macOS. **FFmpeg n'est pas encore
+intégré** ; une évolution du moteur d'export est prévue.
 
 ## Ce qui reste à faire
 
@@ -93,6 +117,7 @@ dans Applications.
 |---|---|
 | Parité Mac / Windows | Porter l'enregistrement microphone et la détection automatique des plans sur Windows, compléter la projection. |
 | Audio et vidéo | Vérifier les codecs et les dispositions multicanales sur davantage de médias. |
+| Export MP4 expérimental | Accélérer le rendu et l’encodage, étudier FFmpeg et valider davantage de médias sur Mac et Windows. |
 | Anciens projets | Tester davantage de variantes DetX, les anciens .det et la réouverture des exports dans le logiciel original. |
 | Outils métier | Compléter Orphée/FTDI, le sous-titrage UER et l'impression. |
 | Lecture inverse | Vérifier la synchronisation avec différents codecs ; la première préparation du son demande encore du temps. |
@@ -165,7 +190,8 @@ et la publication est décrite dans [Créer une release](docs/RELEASES.md).
 ## Utilisation de l'IA
 
 L'assistance d'un modèle de langage IA (LLM) a été précieuse dans le portage de l'application.
-Des tests, unitaires comme fonctionnels, ont été effectués afin d'assurer un programme stable.
+Les vérifications automatiques et les retours d'utilisation servent à corriger les régressions.
+Certaines fonctions, notamment l'export MP4, restent expérimentales.
 
 ## Retours et contributions
 
@@ -173,7 +199,7 @@ Pour signaler un bug, préciser la plateforme, la version et les étapes pour le
 reproduire. Un petit DetX d'exemple et une capture du comportement attendu dans
 l'original sont utiles. Éviter de joindre des médias confidentiels.
 
-- [Issues GitHub](https://github.com/BUCHMULLER-Nassim-2326028b/CappellaMac/issues)
+- [Issues GitHub](https://github.com/BUCHMULLER-Nassim-2326028b/CappellaSwift/issues)
 - [Architecture et limites](docs/ARCHITECTURE.md)
 - [Raccourcis](docs/RACCOURCIS.md)
 - [Scripts et vérifications CI](docs/SCRIPTS.md)

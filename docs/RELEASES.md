@@ -22,7 +22,10 @@ SHA256SUMS.txt contient les empreintes des cinq fichiers.
 
 ## Publier
 
-1. Enregistrer les modifications du projet dans Git, puis les pousser.
+1. Compléter l'entrée de la version dans CHANGELOG.md, mettre le README à jour,
+   puis enregistrer et pousser les modifications. Les notes du brouillon sont
+   extraites de cette entrée ; les messages de commits ne servent pas de notes.
+   Pour la 1.0.1, conserver la mention **export MP4 expérimental** et sa lenteur connue.
 2. Depuis le dépôt, créer et pousser un nouveau tag :
 
    ~~~powershell
@@ -55,8 +58,8 @@ dans un artefact distinct :
 | Cappella-1.0.1-macOS-arm64-Portable.zip | Application macOS ARM64 |
 | Cappella-1.0.1-Windows-x64-Portable.zip | Portable Windows x64 |
 | Cappella-1.0.1-Windows-x64-Setup.exe | Installateur Windows x64 |
-| Cappella-Windows-arm64-Portable | Un ZIP Windows ARM64 |
-| Cappella-Windows-arm64-Setup | Un Setup Windows ARM64 |
+| Cappella-1.0.1-Windows-arm64-Portable.zip | Un ZIP Windows ARM64 |
+| Cappella-1.0.1-Windows-arm64-Setup.exe | Un Setup Windows ARM64 |
 
 Les distributions sont envoyées avec upload-artifact v7 et archive: false :
 le navigateur télécharge directement le ZIP portable ou le Setup EXE, sans ZIP
@@ -68,7 +71,7 @@ obtenir le nouveau format.
 
 ## Version unique
 
-La première release publique est 1.0.0. Le développement suivant est 1.0.1.
+La première release publique est 1.0.0. La release préparée ici est 1.0.1.
 La seule valeur à modifier pour la prochaine version est `development` dans
 Sources/CappellaCore/AppVersion.swift. L'interface et les builds locaux utilisent
 cette valeur par défaut. Un tag v-prefixed ou une version explicite au script
